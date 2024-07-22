@@ -1,3 +1,4 @@
+import os
 import random
 import time
 from datetime import datetime
@@ -6,7 +7,11 @@ import redis
 from playwright.sync_api import sync_playwright, Page
 from undetected_playwright import Tarnished
 
-r = redis.from_url("redis://redis", encoding="utf8")
+if os.name == 'nt':
+    r = redis.from_url("redis://127.0.0.1:6379", encoding="utf8")
+else:
+    r = redis.from_url("redis://redis:6379", encoding="utf8")
+
 kyiv_tz = pytz.timezone('Europe/Kiev')
 
 r.set('last_script_update', str(datetime.now(tz=kyiv_tz)))
@@ -39,30 +44,37 @@ def main():
             page.wait_for_selector('//*[@id="house_numautocomplete-list"]/div[1]')
             page.click('//*[@id="house_numautocomplete-list"]/div[1]')
 
-            on_at = page.inner_text('//*[@id="showCurOutage"]/p/strong[3]')
-            reason = page.inner_text('//*[@id="showCurOutage"]/p/strong[1]')
-            start_time = page.inner_text('//*[@id="showCurOutage"]/p/strong[2]')
-            # last_update_time = page.inner_text('//*[@id="showCurOutage"]/p/text()[5]')
-            group_number = page.inner_text('//*[@id="group-name"]/span')
+            check_text = page.inner_text('//*[@id="showCurOutage"]/p')
+            if "не зафіксовано" in check_text:
+                print("нема відключень")
+                r.set('now_time', str(datetime.now(tz=kyiv_tz)))
+                r.set('dtek_on', str(True))
+            else:
+                on_at = page.inner_text('//*[@id="showCurOutage"]/p/strong[3]')
+                reason = page.inner_text('//*[@id="showCurOutage"]/p/strong[1]')
+                start_time = page.inner_text('//*[@id="showCurOutage"]/p/strong[2]')
+                # last_update_time = page.inner_text('//*[@id="showCurOutage"]/p/text()[5]')
+                group_number = page.inner_text('//*[@id="group-name"]/span')
 
-            last_update_time = page.evaluate('''
-                        () => {
-                            const element = document.querySelector('#showCurOutage > p');
-                            const textNodes = Array.from(element.childNodes).filter(node => node.nodeType === Node.TEXT_NODE);
-                            return textNodes[textNodes.length - 1].textContent.trim();
-                        }
-                    ''')
+                last_update_time = page.evaluate('''
+                            () => {
+                                const element = document.querySelector('#showCurOutage > p');
+                                const textNodes = Array.from(element.childNodes).filter(node => node.nodeType === Node.TEXT_NODE);
+                                return textNodes[textNodes.length - 1].textContent.trim();
+                            }
+                        ''')
 
-            data = {
-                "disable_reason": reason,
-                "on_at": on_at,
-                "start_time": start_time,
-                "last_dtek_update": last_update_time,
-                "group_number": group_number
-            }
-            r.mset(data)
+                data = {
+                    "disable_reason": reason,
+                    "on_at": on_at,
+                    "start_time": start_time,
+                    "last_dtek_update": last_update_time,
+                    "group_number": group_number
+                }
+                r.mset(data)
+                r.set('dtek_on', str(False))
 
-            print(on_at)
+                print(on_at)
             time.sleep(random.randint(10, 60))
 
         browser.close()
