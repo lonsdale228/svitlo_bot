@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import time
@@ -44,8 +45,33 @@ def main():
             page.wait_for_selector('//*[@id="house_numautocomplete-list"]/div[1]')
             page.click('//*[@id="house_numautocomplete-list"]/div[1]')
 
+            table_array = page.evaluate('''() => {
+                        const rows = document.querySelectorAll('tbody tr');
+                        const tableData = [];
+
+                        rows.forEach(row => {
+                            const cells = row.querySelectorAll('td');
+                            const rowArray = [];
+                            cells.forEach(cell => {
+                                if (cell.classList.contains('cell-scheduled')) {
+                                    rowArray.push(2);
+                                } else if (cell.classList.contains('cell-scheduled-maybe')) {
+                                    rowArray.push(1);
+                                } else if (cell.classList.contains('cell-non-scheduled')) {
+                                    rowArray.push(0);
+                                }
+                            });
+                            tableData.push(rowArray);
+                        });
+
+                        return tableData;
+                    }''')
+
+            jsoned = json.dumps(table_array)
+            r.set("table_array", jsoned)
+
             check_text = page.inner_text('//*[@id="showCurOutage"]/p')
-            if "не зафіксовано" in check_text:
+            if "не зафіксовано" or "У разі відсутності світла у зоні" in check_text:
                 print("нема відключень")
                 r.set('now_time', str(datetime.now(tz=kyiv_tz)))
                 r.set('dtek_on', str(True))
