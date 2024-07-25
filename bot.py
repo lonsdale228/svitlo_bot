@@ -66,7 +66,15 @@ async def send_notification():
 
 async def msg_editor(b: Bot):
     dtek_last_update = await r.get('dtek_update_timestamp')
-    msg = await b.edit_message_text(dtek_last_update, chat_id=317465871, message_id=5)
+    msg_text = f"{dtek_last_update}"
+    prev_msg_raw = await r.get("last_message")
+    prev_msg = json.loads(prev_msg_raw.decode())
+
+    if msg_text != prev_msg:
+        msg = await b.edit_message_text(msg_text, chat_id=317465871, message_id=5)
+    else:
+        print("Similar msg, edit skipped...")
+    await r.set("last_message", json.dumps(msg_text))
 
 async def main():
     scheduler = AsyncIOScheduler()
