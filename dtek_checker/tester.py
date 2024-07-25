@@ -10,7 +10,6 @@ r = redis.Redis(host='localhost', port=6379, db=0)
 
 
 while True:
-    key = r.get('table_array').decode()
-    redumped = json.loads(key)
-    print(redumped)
+    key = r.get('dtek_update_timestamp').decode()
+    print(key)
     time.sleep(1)

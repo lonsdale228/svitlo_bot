@@ -1,3 +1,5 @@
+import json
+
 import requests
 
 url = "https://www.dtek-oem.com.ua/ua/ajax"
