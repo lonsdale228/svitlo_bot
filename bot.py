@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import json
 
 from aiogram import Bot
@@ -7,6 +8,9 @@ from redis import Redis
 from loader import bot, dp, r, logger
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import aiohttp
+import itertools
+
+MY_ID = 317465871
 
 
 async def check_electricity_change():
@@ -42,7 +46,7 @@ async def dtek_checker(redis: Redis):
         "Sec-Fetch-Mode": "cors",
         "Sec-Fetch-Site": "same-origin",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-        "X-Csrf-Token": "5WKzViDLVSWZEd-q-OvB-qQ6-AQodB94nhPBRbP0hYm9Ad9uFqwsSq92t-mp3KmTwH3Oa2IbcjLyeqgSxafm7w==",
+        "X-Csrf-Token": "2YjUYfDglXl6mBJzW0UmAhUNUf9pLI-2rEOBU-6rUUXuw602l47MPBiheiAJDFBKU3U0uxAZ2fyeCcsCrNg6Kg==",
         "X-Requested-With": "XMLHttpRequest"
     }
 
@@ -53,32 +57,49 @@ async def dtek_checker(redis: Redis):
         "data[1][name]": "street",
         "data[1][value]": "вул. Затишна"
     }
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, data=payload) as response:
+                response_text = await response.text()
+                print(response_text)
+                js = json.loads(response_text)
+                await redis.set("dtek_update_timestamp", js["updateTimestamp"])
+    except Exception as e:
+        print(e)
 
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url, headers=headers, data=payload) as response:
-            response_text = await response.text()
-            js = json.loads(response_text)
-            await redis.set("dtek_update_timestamp", js["updateTimestamp"])
 
+async def send_notification(b: Bot, first_start=True):
+    # first_start: None | bool = await r.get("first_start")
+    if first_start:
+        msg = await b.send_message(MY_ID, 'Bot started!', disable_notification=True)
+        await r.set('edit_msg_id', msg.message_id)
 
-async def send_notification():
-    ...
 
 async def msg_editor(b: Bot):
-    dtek_last_update = await r.get('dtek_update_timestamp')
-    msg_text = f"{dtek_last_update}"
-    prev_msg_raw = await r.get("last_message")
-    prev_msg = json.loads(prev_msg_raw.decode())
+    msg_to_edit = await r.get('edit_msg_id')
+    dtek_last_update = (await r.get('dtek_update_timestamp')).decode('utf-8')
+    msg_text = (f"Останнє оновлення з ДТЕКу: \n"
+                f"{dtek_last_update} \n"
+                f"{datetime.datetime.now()}")
 
-    if msg_text != prev_msg:
-        msg = await b.edit_message_text(msg_text, chat_id=317465871, message_id=5)
+    prev_msg_text: None | str = (await r.get('prev_msg_text')).decode('utf-8')
+    if prev_msg_text is not None:
+        if msg_text == prev_msg_text:
+            print("same, skipped...")
+        else:
+            await b.edit_message_text(msg_text, chat_id=MY_ID, message_id=msg_to_edit)
     else:
-        print("Similar msg, edit skipped...")
-    await r.set("last_message", json.dumps(msg_text))
+        await b.edit_message_text(msg_text, chat_id=MY_ID, message_id=msg_to_edit)
+
+    await r.set('prev_msg_text', msg_text)
+
 
 async def main():
+    await send_notification(bot, first_start=False)
     scheduler = AsyncIOScheduler()
     # scheduler.add_job(check_electricity_change, 'interval', seconds=3)
+    await dtek_checker(r)
+    await msg_editor(bot)
     scheduler.add_job(dtek_checker, 'interval', seconds=10, jitter=1, args=(r,))
     scheduler.add_job(msg_editor, 'interval', seconds=10, args=(bot,))
     scheduler.start()

@@ -1,9 +1,12 @@
+import asyncio
 import json
-import requests
+import re
 
-# url = "https://www.dtek-oem.com.ua/ua/shutdowns"
-url = "https://www.dtek-oem.com.ua/ua/ajax"
+from aiogram.client.session import aiohttp
+from redis import Redis
+from bs4 import BeautifulSoup
 
+url = 'https://www.dtek-oem.com.ua/ua/shutdowns'
 headers = {
     "Accept": "application/json, text/javascript, */*; q=0.01",
     "Accept-Encoding": "gzip, deflate, br, zstd",
@@ -26,19 +29,37 @@ headers = {
     "X-Requested-With": "XMLHttpRequest"
 }
 
-payload = {
-    "method": "getHomeNum",
-    "data[0][name]": "city",
-    "data[0][value]": "с. Лиманка",
-    "data[1][name]": "street",
-    "data[1][value]": "вул. Затишна"
-}
+
+async def get_raw_page():
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as response:
+            if response.status == 200:
+                return await response.text()
+            else:
+                return None
 
 
-response = requests.post(url, headers=headers, data=payload)
+async def get_timetable_by_group(group_num: int | str):
+    raw_page = await get_raw_page()
+    # soup = BeautifulSoup(raw_page, 'html.parser')
+    # script_tag = soup.find('script', string=re.compile(r'DisconSchedule\.preset\s*=\s*'))
+    # script_content: str = script_tag.string
 
-print(response.text)
+    script_content = raw_page
 
-with open('html.html', 'w', encoding='utf-8') as file:
-    file.write(response.text)
+    pattern = 'DisconSchedule.preset = '
+    start_index = script_content.find(pattern)
+    end_index = script_content.find('DisconSchedule.showCurSchedule')
 
+    new_string = script_content[start_index+len(pattern):end_index].strip()
+    json_string = json.loads(new_string)
+
+    group_graphic = json_string['data'][str(group_num)]
+    every_hour_stat = []
+    for weekday in group_graphic.values():
+        for hour in weekday.values():
+            every_hour_stat.append(hour)
+
+    print(every_hour_stat)
+
+asyncio.run(get_timetable_by_group(4))
