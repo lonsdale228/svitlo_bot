@@ -42,3 +42,13 @@ print(response.text)
 with open('html.html', 'w', encoding='utf-8') as file:
     file.write(response.text)
 
+js = json.loads(response.text)
+
+
+reason = js['data']['10']['sub_type']
+start_date = js['data']['10']['start_date']
+end_date = js['data']['10']['end_date']
+disable_type = js['data']['10']['type']
+sub_type_reason = js['data']['10']['sub_type_reason']
+
+print(reason)

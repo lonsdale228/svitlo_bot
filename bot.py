@@ -64,6 +64,11 @@ async def dtek_checker(redis: Redis):
                 print(response_text)
                 js = json.loads(response_text)
                 await redis.set("dtek_update_timestamp", js["updateTimestamp"])
+                await redis.set("sub_type", js['data']['10']['sub_type'])
+                await redis.set("start_date", js['data']['10']['start_date'])
+                await redis.set("end_date", js['data']['10']['end_date'])
+                await redis.set("type", js['data']['10']['type'])
+                await redis.set("sub_type_reason", js['data']['10']['sub_type_reason'])
     except Exception as e:
         print(e)
 
