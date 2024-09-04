@@ -11,6 +11,8 @@ import aiohttp
 import itertools
 
 MY_ID = 317465871
+DTEK_UPDATE_INTERVAL = 10
+MSG_UPDATE_INTERVAL = 10
 
 
 async def check_electricity_change():
@@ -25,7 +27,6 @@ async def check_electricity_change():
 
 
 async def dtek_checker(redis: Redis):
-    d = {}
     url = "https://www.dtek-oem.com.ua/ua/ajax"
 
     headers = {
@@ -64,6 +65,11 @@ async def dtek_checker(redis: Redis):
                 print(response_text)
                 js = json.loads(response_text)
                 await redis.set("dtek_update_timestamp", js["updateTimestamp"])
+                await redis.set("sub_type", js['data']['10']['sub_type'])
+                await redis.set("start_date", js['data']['10']['start_date'])
+                await redis.set("end_date", js['data']['10']['end_date'])
+                await redis.set("type", js['data']['10']['type'])
+                await redis.set("sub_type_reason", js['data']['10']['sub_type_reason'][0])
     except Exception as e:
         print(e)
 
@@ -80,14 +86,11 @@ async def msg_editor(b: Bot):
     dtek_last_update = (await r.get('dtek_update_timestamp')).decode('utf-8')
     msg_text = (f"Останнє оновлення з ДТЕКу: \n"
                 f"{dtek_last_update} \n"
-                f"{datetime.datetime.now()}")
+                f"Оновлено о {datetime.datetime.now().strftime("%H:%M:%S")}")
 
     prev_msg_text: None | str = (await r.get('prev_msg_text')).decode('utf-8')
-    if prev_msg_text is not None:
-        if msg_text == prev_msg_text:
-            print("same, skipped...")
-        else:
-            await b.edit_message_text(msg_text, chat_id=MY_ID, message_id=msg_to_edit)
+    if (prev_msg_text is None) and (msg_text == prev_msg_text):
+        print("same or none, skipped...")
     else:
         await b.edit_message_text(msg_text, chat_id=MY_ID, message_id=msg_to_edit)
 
@@ -95,13 +98,14 @@ async def msg_editor(b: Bot):
 
 
 async def main():
-    await send_notification(bot, first_start=False)
+    first_start = await r.get('first_start')
+    await send_notification(bot, first_start=first_start)
     scheduler = AsyncIOScheduler()
     # scheduler.add_job(check_electricity_change, 'interval', seconds=3)
     await dtek_checker(r)
     await msg_editor(bot)
-    scheduler.add_job(dtek_checker, 'interval', seconds=10, jitter=1, args=(r,))
-    scheduler.add_job(msg_editor, 'interval', seconds=10, args=(bot,))
+    scheduler.add_job(dtek_checker, 'interval', seconds=DTEK_UPDATE_INTERVAL, jitter=1, args=(r,))
+    scheduler.add_job(msg_editor, 'interval', seconds=MSG_UPDATE_INTERVAL, args=(bot,))
     scheduler.start()
 
     await dp.start_polling(bot)

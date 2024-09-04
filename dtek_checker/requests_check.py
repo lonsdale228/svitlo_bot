@@ -39,6 +39,6 @@ response = requests.post(url, headers=headers, data=payload)
 
 print(response.text)
 
-with open('html.html', 'w', encoding='utf-8') as file:
-    file.write(response.text)
+# with open('html.html', 'w', encoding='utf-8') as file:
+#     file.write(response.text)
 
