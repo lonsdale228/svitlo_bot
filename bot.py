@@ -14,16 +14,50 @@ MY_ID = 317465871
 DTEK_UPDATE_INTERVAL = 10
 MSG_UPDATE_INTERVAL = 10
 
+REGION_NAME = "с. Лиманка"
+STREET_NAME = "вул. Затишна"
+HOUSE_NUM = "10"
+
+# REGION_NAME = "м. Одеса"
+# STREET_NAME = "вул. Інглезі"
+# HOUSE_NUM = "1"
+
+
+def to_int_or_none(val):
+    return None if val is None else int(val)
+
 
 async def check_electricity_change():
-    current_status = await r.get('status').decode()
-    prev_status = await r.get('prev_status').decode()
+    current_status = await r.get('status')
+    prev_status = await r.get('prev_status')
+
+    current_status = to_int_or_none(current_status)
+    prev_status = to_int_or_none(prev_status)
+
+    # at first start
+    if (current_status is not None) and (prev_status is None):
+        await r.set('prev_status', current_status)
 
     if current_status != prev_status:
-        await r.set('status', current_status)
-        await send_notification()
+        await send_change_msg(current_status)
+        await r.set('prev_status', current_status)
     else:
         ...
+
+
+async def send_change_msg(is_on: int):
+    msg_text = f""
+    print(is_on, type(is_on))
+    if is_on == 1:
+        msg_text += "Світло з'явилося!"
+    else:
+        msg_text += "Світла зникло!"
+    msg = await bot.send_message(MY_ID, msg_text, disable_notification=False)
+
+    prev_msg_id = await r.get("edit_msg_id")
+    await r.set("prev_msg_id", prev_msg_id)
+
+    await r.set("edit_msg_id", msg.message_id)
 
 
 async def dtek_checker(redis: Redis):
@@ -51,31 +85,42 @@ async def dtek_checker(redis: Redis):
         "X-Requested-With": "XMLHttpRequest"
     }
 
+    # payload = {
+    #     "method": "getHomeNum",
+    #     "data[0][name]": "city",
+    #     "data[0][value]": "м. Одеса",
+    #     "data[1][name]": "street",
+    #     "data[1][value]": "вул. Інглезі"
+    # }
     payload = {
-        "method": "getHomeNum",
-        "data[0][name]": "city",
-        "data[0][value]": "с. Лиманка",
-        "data[1][name]": "street",
-        "data[1][value]": "вул. Затишна"
+    "method": "getHomeNum",
+    "data[0][name]": "city",
+    "data[0][value]": REGION_NAME,
+    "data[1][name]": "street",
+    "data[1][value]": STREET_NAME
     }
+
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers, data=payload) as response:
                 response_text = await response.text()
-                print(response_text)
+                if "ROBOT" in response_text:
+                    await asyncio.sleep(2)
+                    await dtek_checker(redis)
+                    return
+                logger.debug(response_text)
                 js = json.loads(response_text)
                 await redis.set("dtek_update_timestamp", js["updateTimestamp"])
-                await redis.set("sub_type", js['data']['10']['sub_type'])
-                await redis.set("start_date", js['data']['10']['start_date'])
-                await redis.set("end_date", js['data']['10']['end_date'])
-                await redis.set("type", js['data']['10']['type'])
-                await redis.set("sub_type_reason", js['data']['10']['sub_type_reason'][0])
+                await redis.set("sub_type", js['data'][HOUSE_NUM]['sub_type'])
+                await redis.set("start_date", js['data'][HOUSE_NUM]['start_date'])
+                await redis.set("end_date", js['data'][HOUSE_NUM]['end_date'])
+                await redis.set("type", js['data'][HOUSE_NUM]['type'])
+                await redis.set("sub_type_reason", js['data'][HOUSE_NUM]['sub_type_reason'][0])
     except Exception as e:
-        print(e)
+        logger.error(e)
 
 
 async def send_notification(b: Bot, first_start=True):
-    # first_start: None | bool = await r.get("first_start")
     if first_start:
         msg = await b.send_message(MY_ID, 'Bot started!', disable_notification=True)
         await r.set('edit_msg_id', msg.message_id)
@@ -83,14 +128,35 @@ async def send_notification(b: Bot, first_start=True):
 
 async def msg_editor(b: Bot):
     msg_to_edit = await r.get('edit_msg_id')
-    dtek_last_update = (await r.get('dtek_update_timestamp')).decode('utf-8')
-    msg_text = (f"Останнє оновлення з ДТЕКу: \n"
+    dtek_last_update = await r.get('dtek_update_timestamp')
+    status = await r.get('status')
+    sub_type = await r.get('sub_type')
+
+    status = to_int_or_none(status)
+    end_date = await r.get('end_date')
+
+    electricity_status_text = ""
+    if status == 1:
+        electricity_status_text += "Світло є!"
+    else:
+        electricity_status_text += "Світла немає!"
+
+    if sub_type == "":
+        sub_type = "Відключень за ДТЕК немає"
+
+    msg_text = (f"{electricity_status_text} \n"
+                f"Останнє оновлення з ДТЕКу: \n"
                 f"{dtek_last_update} \n"
+                f"<i>{sub_type}</i> \n"
                 f"Оновлено о {datetime.datetime.now().strftime("%H:%M:%S")}")
 
-    prev_msg_text: None | str = (await r.get('prev_msg_text')).decode('utf-8')
+    if end_date != "":
+        msg_text += ("\n"
+                     f"Включення о {end_date}")
+
+    prev_msg_text: None | str = await r.get('prev_msg_text')
     if (prev_msg_text is None) and (msg_text == prev_msg_text):
-        print("same or none, skipped...")
+        logger.debug("same or none, skipped...")
     else:
         await b.edit_message_text(msg_text, chat_id=MY_ID, message_id=msg_to_edit)
 
@@ -98,10 +164,13 @@ async def msg_editor(b: Bot):
 
 
 async def main():
-    first_start = await r.get('first_start')
-    await send_notification(bot, first_start=first_start)
+    msg_to_edit = await r.get("edit_msg_id")
+    if msg_to_edit is None:
+        await send_notification(bot, first_start=True)
     scheduler = AsyncIOScheduler()
-    # scheduler.add_job(check_electricity_change, 'interval', seconds=3)
+
+    scheduler.add_job(check_electricity_change, 'interval', seconds=1)
+
     await dtek_checker(r)
     await msg_editor(bot)
     scheduler.add_job(dtek_checker, 'interval', seconds=DTEK_UPDATE_INTERVAL, jitter=1, args=(r,))
