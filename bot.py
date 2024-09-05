@@ -18,9 +18,37 @@ REGION_NAME = "с. Лиманка"
 STREET_NAME = "вул. Затишна"
 HOUSE_NUM = "10"
 
+
 # REGION_NAME = "м. Одеса"
 # STREET_NAME = "вул. Інглезі"
 # HOUSE_NUM = "1"
+
+def time_format(seconds, is_striped=False) -> str:
+    if seconds is not None:
+        seconds = int(seconds)
+        d = seconds // (3600 * 24)
+        h = seconds // 3600 % 24
+        m = seconds % 3600 // 60
+        s = seconds % 3600 % 60
+        if is_striped:
+            if d > 0:
+                return '{:02d}:{:02d}:{:02d}:{:02d}'.format(d, h, m, s)
+            elif h > 0:
+                return '{:02d}:{:02d}:{:02d}'.format(h, m, s)
+            elif m > 0:
+                return '{:02d}:{:02d}'.format(m, s)
+            elif s > 0:
+                return '{:02d}'.format(s)
+        else:
+            if d > 0:
+                return '{:02d} днів {:02d} годин {:02d} хвилин {:02d} сек'.format(d, h, m, s)
+            elif h > 0:
+                return '{:02d} годин {:02d} хвилин {:02d} секунд'.format(h, m, s)
+            elif m > 0:
+                return '{:02d} хвилин {:02d} сек'.format(m, s)
+            elif s > 0:
+                return '{:02d} сек'.format(s)
+    return '-'
 
 
 def to_int_or_none(val):
@@ -48,15 +76,35 @@ async def check_electricity_change():
 async def send_change_msg(is_on: int):
     msg_text = f""
     print(is_on, type(is_on))
+    now = datetime.datetime.now()
+    now_strf = now.strftime("%H:%M:%S")
+
+    off_time = datetime.datetime.fromtimestamp(float(await r.get("off_time")))
+    on_time = datetime.datetime.fromtimestamp(float(await r.get("on_time")))
+
+    prev_msg_id = int(await r.get("edit_msg_id"))
+
     if is_on == 1:
-        msg_text += "Світло з'явилося!"
+        msg_text += "💡Світло з'явилося!"
+        await r.set("on_time", str(now.timestamp()))
+
+        prev_msg_text = (f"<i>Світла не було: \n"
+                         f"з {off_time.strftime("%H:%M:%S")} по {now_strf} \n"
+                         f"Протягом: \n"
+                         f"{time_format((now-off_time).total_seconds())}</i>")
+
     else:
-        msg_text += "Світла зникло!"
+        msg_text += "⚫️Світло зникло!"
+        await r.set("off_time", str(now.timestamp()))
+        prev_msg_text = (f"<i>Світло було: \n"
+                         f"з {on_time.strftime("%H:%M:%S")} по {now_strf} \n"
+                         f"Протягом: \n"
+                         f"{time_format((now-on_time).total_seconds())}</i>")
     msg = await bot.send_message(MY_ID, msg_text, disable_notification=False)
 
-    prev_msg_id = await r.get("edit_msg_id")
-    await r.set("prev_msg_id", prev_msg_id)
+    await bot.edit_message_text(text=prev_msg_text, chat_id=MY_ID, message_id=prev_msg_id)
 
+    await r.set("prev_msg_id", prev_msg_id)
     await r.set("edit_msg_id", msg.message_id)
 
 
@@ -85,19 +133,12 @@ async def dtek_checker(redis: Redis):
         "X-Requested-With": "XMLHttpRequest"
     }
 
-    # payload = {
-    #     "method": "getHomeNum",
-    #     "data[0][name]": "city",
-    #     "data[0][value]": "м. Одеса",
-    #     "data[1][name]": "street",
-    #     "data[1][value]": "вул. Інглезі"
-    # }
     payload = {
-    "method": "getHomeNum",
-    "data[0][name]": "city",
-    "data[0][value]": REGION_NAME,
-    "data[1][name]": "street",
-    "data[1][value]": STREET_NAME
+        "method": "getHomeNum",
+        "data[0][name]": "city",
+        "data[0][value]": REGION_NAME,
+        "data[1][name]": "street",
+        "data[1][value]": STREET_NAME
     }
 
     try:
@@ -134,28 +175,30 @@ async def msg_editor(b: Bot):
 
     status = to_int_or_none(status)
     end_date = await r.get('end_date')
-
+    start_date = await r.get('start_date')
     electricity_status_text = ""
     if status == 1:
-        electricity_status_text += "Світло є!"
+        electricity_status_text += "💡Світло є!"
     else:
-        electricity_status_text += "Світла немає!"
+        electricity_status_text += "⚫️Світла немає!"
 
     if sub_type == "":
-        sub_type = "Відключень за ДТЕК немає"
+        sub_type = "Наразі відключень за ДТЕК НЕМАЄ"
 
-    msg_text = (f"{electricity_status_text} \n"
-                f"Останнє оновлення з ДТЕКу: \n"
-                f"{dtek_last_update} \n"
-                f"<i>{sub_type}</i> \n"
-                f"Оновлено о {datetime.datetime.now().strftime("%H:%M:%S")}")
-
+    msg_text = (f"<b>{electricity_status_text}</b> \n"
+                f"<i>Останнє дані з ДТЕКу: \n"
+                f"{sub_type}</i> \n"
+                f"Оновлено о: {dtek_last_update} ")
+                # f"Оновлено о {datetime.datetime.now().strftime("%H:%M:%S")}")
+    if start_date != "":
+        msg_text += ("\n"
+                     f"Вимкнення о {start_date}")
     if end_date != "":
         msg_text += ("\n"
-                     f"Включення о {end_date}")
+                     f"Увімкення о {end_date}")
 
-    prev_msg_text: None | str = await r.get('prev_msg_text')
-    if (prev_msg_text is None) and (msg_text == prev_msg_text):
+    prev_msg_text: str = await r.get('prev_msg_text')
+    if (prev_msg_text is None) or (msg_text == prev_msg_text):
         logger.debug("same or none, skipped...")
     else:
         await b.edit_message_text(msg_text, chat_id=MY_ID, message_id=msg_to_edit)
@@ -163,7 +206,18 @@ async def msg_editor(b: Bot):
     await r.set('prev_msg_text', msg_text)
 
 
+async def set_def_values():
+    on_time = await r.get("on_time")
+    off_time = await r.get("off_time")
+    now = datetime.datetime.now().timestamp()
+    if not on_time:
+        await r.set("on_time", now)
+    if not off_time:
+        await r.set("off_time", now)
+
+
 async def main():
+    await set_def_values()
     msg_to_edit = await r.get("edit_msg_id")
     if msg_to_edit is None:
         await send_notification(bot, first_start=True)

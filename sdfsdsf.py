@@ -7,4 +7,7 @@ if os.name == 'nt':
 else:
     r = redis.from_url("redis://redis:6379", encoding="utf8")
 
+stat = r.get("status")
+
+status = 0 if stat == "1" else 1
 r.set("status", int(True))
