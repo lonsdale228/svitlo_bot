@@ -9,6 +9,7 @@ from models import Zone
 
 time = [f"0{i}:00:00" if i < 10 else f"{i}:00:00" for i in range(24)]
 
+# TODO parsing data from web
 zones = ['no', 'maybe', 'maybe', 'maybe', 'yes', 'no', 'no', 'no', 'maybe', 'maybe', 'yes', 'yes', 'yes', 'no', 'no',
          'no', 'maybe', 'maybe', 'maybe', 'yes', 'yes', 'yes', 'no', 'no', 'no', 'no', 'maybe', 'maybe', 'yes', 'yes',
          'yes', 'no', 'no', 'no', 'maybe', 'maybe', 'maybe', 'yes', 'yes', 'yes', 'no', 'no', 'no', 'maybe', 'maybe',
@@ -21,6 +22,7 @@ zones = ['no', 'maybe', 'maybe', 'maybe', 'yes', 'no', 'no', 'no', 'maybe', 'may
          'maybe', 'maybe', 'yes', 'yes', 'yes', 'no', 'no', 'no', 'maybe', 'maybe', 'maybe', 'yes', 'yes', 'yes', 'no',
          'no', 'no', 'maybe', 'maybe', 'maybe', 'yes', 'yes', 'yes', 'no', 'no', 'no', 'maybe', 'maybe', 'maybe', 'yes',
          'yes', 'yes', 'no', 'no']
+
 
 def time_with_tz():
     return datetime.datetime.now(tz=pytz.timezone(TIMEZONE))
@@ -80,7 +82,7 @@ def time_left(t2, is_striped=True):
 def zone_to_string(zone: str) -> tuple[str, str]:
     match zone:
         case 'yes':
-            return 'БІЛА ЗОНА', 'БІЛОЇ ЗОНИ'
+            return '<b>БІЛА ЗОНА</b>', '<b>БІЛОЇ ЗОНИ</b>'
         case 'no':
             return 'ЧОРНА ЗОНА', 'ЧОРНОЇ ЗОНИ'
         case 'maybe':

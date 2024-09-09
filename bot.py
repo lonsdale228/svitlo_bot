@@ -1,24 +1,28 @@
 import asyncio
 import datetime
 import json
+import os
 
+import pytz
 from aiogram import Bot
 from redis import Redis
 
-from loader import bot, dp, r, logger
+from loader import bot, dp, logger, TIMEZONE
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import aiohttp
 
 from models import Zone
-from utils import time_format, get_next_zones, zones, time_with_tz
+from redis_loader import r
+from utils import time_format, get_next_zones, zones, time_with_tz, zone_to_string
+import handlers
 
 MY_ID = 317465871
-DTEK_UPDATE_INTERVAL = 10
+DTEK_UPDATE_INTERVAL = 40
 MSG_UPDATE_INTERVAL = 10
-
 REGION_NAME = "с. Лиманка"
 STREET_NAME = "вул. Затишна"
 HOUSE_NUM = "10"
+DONATE_LINK = os.getenv('DONATE_LINK')
 
 
 # REGION_NAME = "м. Одеса"
@@ -31,32 +35,39 @@ def to_int_or_none(val):
 
 
 async def check_electricity_change(lock):
-    current_status = await r.get('status')
-    prev_status = await r.get('prev_status')
+    pause = await r.get('pause')
 
-    current_status = to_int_or_none(current_status)
-    prev_status = to_int_or_none(prev_status)
+    if pause != 1:
+        current_status = await r.get('status')
+        prev_status = await r.get('prev_status')
 
-    # at first start
-    if (current_status is not None) and (prev_status is None):
-        await r.set('prev_status', current_status)
+        current_status = to_int_or_none(current_status)
+        prev_status = to_int_or_none(prev_status)
 
-    if current_status != prev_status:
-        async with lock:
-            await send_change_msg(current_status)
-        await r.set('prev_status', current_status)
+        # at first start
+        if (current_status is not None) and (prev_status is None):
+            await r.set('prev_status', current_status)
+
+        if current_status != prev_status:
+            async with lock:
+                await send_change_msg(current_status)
+            await r.set('prev_status', current_status)
+        else:
+            ...
     else:
-        ...
-
+        logger.info("Paused...")
 
 async def send_change_msg(is_on: int):
     msg_text = f""
     print(is_on, type(is_on))
-    now = datetime.datetime.now()
+    now = time_with_tz()
     now_strf = now.strftime("%H:%M:%S")
 
     off_time = datetime.datetime.fromtimestamp(float(await r.get("off_time")))
     on_time = datetime.datetime.fromtimestamp(float(await r.get("on_time")))
+
+    tz_info_off_time = off_time.tzinfo
+    tz_info_on_time = on_time.tzinfo
 
     prev_msg_id = int(await r.get("edit_msg_id"))
 
@@ -67,7 +78,7 @@ async def send_change_msg(is_on: int):
         prev_msg_text = (f"<i>Світла не було: \n"
                          f"з {off_time.strftime("%H:%M:%S")} по {now_strf} \n"
                          f"Протягом: \n"
-                         f"{time_format((now - off_time).total_seconds())}</i>")
+                         f"{time_format((now.replace(tzinfo=tz_info_off_time) - off_time).total_seconds())}</i>")
 
     else:
         msg_text += "⚫️Світло зникло!"
@@ -75,7 +86,7 @@ async def send_change_msg(is_on: int):
         prev_msg_text = (f"<i>Світло було: \n"
                          f"з {on_time.strftime("%H:%M:%S")} по {now_strf} \n"
                          f"Протягом: \n"
-                         f"{time_format((now - on_time).total_seconds())}</i>")
+                         f"{time_format((now.replace(tzinfo=tz_info_on_time) - on_time).total_seconds())}</i>")
     msg = await bot.send_message(MY_ID, msg_text, disable_notification=False)
 
     await bot.edit_message_text(text=prev_msg_text, chat_id=MY_ID, message_id=prev_msg_id)
@@ -144,14 +155,14 @@ async def send_notification(b: Bot, first_start=True):
 
 
 async def msg_editor(b: Bot, lock):
-    global zones
+    global zones, DONATE_LINK
 
     async with lock:
         msg_to_edit = await r.get('edit_msg_id')
     dtek_last_update = await r.get('dtek_update_timestamp')
     status = await r.get('status')
     sub_type = await r.get('sub_type')
-    now = datetime.datetime.now()
+    now = time_with_tz()
     status = to_int_or_none(status)
     end_date = await r.get('end_date')
     start_date = await r.get('start_date')
@@ -160,17 +171,22 @@ async def msg_editor(b: Bot, lock):
     off_time = datetime.datetime.fromtimestamp(float(await r.get("off_time")))
     on_time = datetime.datetime.fromtimestamp(float(await r.get("on_time")))
 
+    tz_info_off_time = off_time.tzinfo
+    tz_info_on_time = on_time.tzinfo
+
     if status == 1:
         electricity_status_text += "💡Світло є!"
-        time_av = (f"Світло присутнє: \n"
-                   f"{time_format((now - on_time).total_seconds())}")
+        time_av = (f"Світло присутнє протягом: \n"
+                   f"{time_format((now.replace(tzinfo=tz_info_on_time) - on_time).total_seconds())} \n"
+                   f"Увімкнено о {on_time.strftime('%H:%M:%S')}")
     else:
         electricity_status_text += "⚫️Світла немає!"
-        time_av = (f"Світло відсутнє: \n"
-                   f"{time_format((now - off_time).total_seconds())}")
+        time_av = (f"Світло відсутнє протягом: \n"
+                   f"{time_format((now.replace(tzinfo=tz_info_off_time) - off_time).total_seconds())} \n"
+                   f"Вимкнено о {off_time.strftime('%H:%M:%S')}")
 
     if sub_type == "":
-        sub_type = "Наразі відключень за ДТЕК НЕМАЄ"
+        sub_type = "Наразі відключень НЕМАЄ"
 
     current_hour = time_with_tz().hour
     current_weekday = time_with_tz().weekday()
@@ -181,20 +197,28 @@ async def msg_editor(b: Bot, lock):
     msg_text = (f"<b>{electricity_status_text}</b> \n"
                 f"{time_av} \n")
 
+    msg_text += (f"---------------------\n"
+                 f"Зараз {zone_to_string(zones[current_cell])[0]} \n"
+                 f"---------------------\n")
+
     for zone in zone_list:
-        msg_text += (f"До {zone.zone_name} о {zone.time}: \n"
+        msg_text += (f"До {zone.zone_name[1]} о {zone.time}: \n"
                      f"{zone.time_left} \n")
 
-    msg_text += (f"<i>Останнє дані з ДТЕКу: \n"
-                 f"{sub_type}</i> \n"
+    msg_text += (f"---------------------\n"
+                 f"Останні дані з ДТЕКу: \n"
+                 f"<i>{sub_type}</i> \n"
                  f"Оновлено о: {dtek_last_update} ")
-    # f"Оновлено о {datetime.datetime.now().strftime("%H:%M:%S")}")
+
     if start_date != "":
         msg_text += ("\n"
                      f"Вимкнення о {start_date}")
     if end_date != "":
         msg_text += ("\n"
                      f"Увімкення о {end_date}")
+
+    msg_text += ("\n\n"
+                 f"<a href='{DONATE_LINK}'>До чаю</a>")
 
     prev_msg_text: str = await r.get('prev_msg_text')
     if (prev_msg_text is None) or (msg_text == prev_msg_text):

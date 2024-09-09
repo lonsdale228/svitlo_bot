@@ -8,6 +8,11 @@ services:
       - .env
     depends_on:
       - redis
+    environment:
+      TZ: "Europe/Kyiv"
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"
 
   redis:
     image: redis:latest
@@ -27,3 +32,8 @@ services:
       - "1889:1889"
     depends_on:
       - redis
+    environment:
+      TZ: "Europe/Kyiv"
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"
