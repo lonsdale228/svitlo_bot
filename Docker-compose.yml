@@ -6,6 +6,8 @@ services:
       dockerfile: Docker
     env_file:
       - .env
+    depends_on:
+      - redis
 
   redis:
     image: redis:latest
@@ -15,10 +17,11 @@ services:
     volumes:
       - /path/to/local/dаta:/root/redis
       - /path/to/local/redis.conf:/usr/local/etc/redis/redis.conf
-  dtek_checker:
+  api:
     build:
-      context: dtek_checker
+      context: api
       dockerfile: Dockerfile
-
-volumes:
-  postgres_data:
+    ports:
+      - "1889:1889"
+    depends_on:
+      - redis

@@ -1,10 +1,6 @@
 import asyncio
 import json
-import re
-
 from aiogram.client.session import aiohttp
-from redis import Redis
-from bs4 import BeautifulSoup
 
 url = 'https://www.dtek-oem.com.ua/ua/shutdowns'
 headers = {
@@ -41,17 +37,13 @@ async def get_raw_page():
 
 async def get_timetable_by_group(group_num: int | str):
     raw_page = await get_raw_page()
-    # soup = BeautifulSoup(raw_page, 'html.parser')
-    # script_tag = soup.find('script', string=re.compile(r'DisconSchedule\.preset\s*=\s*'))
-    # script_content: str = script_tag.string
-
     script_content = raw_page
 
     pattern = 'DisconSchedule.preset = '
     start_index = script_content.find(pattern)
     end_index = script_content.find('DisconSchedule.showCurSchedule')
 
-    new_string = script_content[start_index+len(pattern):end_index].strip()
+    new_string = script_content[start_index + len(pattern):end_index].strip()
     json_string = json.loads(new_string)
 
     group_graphic = json_string['data'][str(group_num)]
@@ -60,6 +52,6 @@ async def get_timetable_by_group(group_num: int | str):
         for hour in weekday.values():
             every_hour_stat.append(hour)
 
-    print(every_hour_stat)
+    return every_hour_stat
 
-asyncio.run(get_timetable_by_group(4))
+print(asyncio.run(get_timetable_by_group(4)))

@@ -8,7 +8,6 @@ from redis import Redis
 from loader import bot, dp, r, logger
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import aiohttp
-import itertools
 
 MY_ID = 317465871
 DTEK_UPDATE_INTERVAL = 10
@@ -55,7 +54,7 @@ def to_int_or_none(val):
     return None if val is None else int(val)
 
 
-async def check_electricity_change():
+async def check_electricity_change(lock):
     current_status = await r.get('status')
     prev_status = await r.get('prev_status')
 
@@ -67,7 +66,8 @@ async def check_electricity_change():
         await r.set('prev_status', current_status)
 
     if current_status != prev_status:
-        await send_change_msg(current_status)
+        async with lock:
+            await send_change_msg(current_status)
         await r.set('prev_status', current_status)
     else:
         ...
@@ -167,25 +167,35 @@ async def send_notification(b: Bot, first_start=True):
         await r.set('edit_msg_id', msg.message_id)
 
 
-async def msg_editor(b: Bot):
-    msg_to_edit = await r.get('edit_msg_id')
+async def msg_editor(b: Bot, lock):
+    async with lock:
+        msg_to_edit = await r.get('edit_msg_id')
     dtek_last_update = await r.get('dtek_update_timestamp')
     status = await r.get('status')
     sub_type = await r.get('sub_type')
-
+    now = datetime.datetime.now()
     status = to_int_or_none(status)
     end_date = await r.get('end_date')
     start_date = await r.get('start_date')
     electricity_status_text = ""
+
+    off_time = datetime.datetime.fromtimestamp(float(await r.get("off_time")))
+    on_time = datetime.datetime.fromtimestamp(float(await r.get("on_time")))
+
     if status == 1:
         electricity_status_text += "💡Світло є!"
+        time_av = (f"Світло присутнє: \n"
+                   f"{time_format((now - on_time).total_seconds())}")
     else:
         electricity_status_text += "⚫️Світла немає!"
+        time_av = (f"Світло відсутнє: \n"
+                   f"{time_format((now - off_time).total_seconds())}")
 
     if sub_type == "":
         sub_type = "Наразі відключень за ДТЕК НЕМАЄ"
 
     msg_text = (f"<b>{electricity_status_text}</b> \n"
+                f"{time_av} \n"
                 f"<i>Останнє дані з ДТЕКу: \n"
                 f"{sub_type}</i> \n"
                 f"Оновлено о: {dtek_last_update} ")
@@ -206,7 +216,7 @@ async def msg_editor(b: Bot):
     await r.set('prev_msg_text', msg_text)
 
 
-async def set_def_values():
+async def set_start_values():
     on_time = await r.get("on_time")
     off_time = await r.get("off_time")
     now = datetime.datetime.now().timestamp()
@@ -217,18 +227,19 @@ async def set_def_values():
 
 
 async def main():
-    await set_def_values()
+    job_lock = asyncio.Lock()
+
+    await set_start_values()
     msg_to_edit = await r.get("edit_msg_id")
     if msg_to_edit is None:
         await send_notification(bot, first_start=True)
     scheduler = AsyncIOScheduler()
 
-    scheduler.add_job(check_electricity_change, 'interval', seconds=1)
-
     await dtek_checker(r)
-    await msg_editor(bot)
+    await msg_editor(bot, job_lock)
+    scheduler.add_job(check_electricity_change, 'interval', seconds=1, id='checker', args=(job_lock,))
     scheduler.add_job(dtek_checker, 'interval', seconds=DTEK_UPDATE_INTERVAL, jitter=1, args=(r,))
-    scheduler.add_job(msg_editor, 'interval', seconds=MSG_UPDATE_INTERVAL, args=(bot,))
+    scheduler.add_job(msg_editor, 'interval', seconds=MSG_UPDATE_INTERVAL, args=(bot, job_lock), id='editor')
     scheduler.start()
 
     await dp.start_polling(bot)
