@@ -14,7 +14,7 @@ async def startup():
     if os.name == 'nt':
         redis_connection = redis.from_url("redis://127.0.0.1:6379", encoding="utf-8", decode_responses=True)
     else:
-        redis_connection = redis.from_url("redis://localhost", encoding="utf-8", decode_responses=True)
+        redis_connection = redis.from_url("redis://redis:6379", encoding="utf-8", decode_responses=True)
     await FastAPILimiter.init(redis_connection)
 
 
@@ -26,6 +26,7 @@ else:
 
 class StatusRequest(BaseModel):
     status: str
+    value: str
 
 
 @app.get("/get_status", dependencies=[Depends(RateLimiter(times=60, seconds=60))])
@@ -39,6 +40,8 @@ async def send_status(request: StatusRequest, req: Request):
     api_key = req.headers.get('X-API-Key')
     if api_key == API_KEY:
         status = request.status
+        value = request.value
+        print(status, value)
         if status == "on":
             print("now is enable")
             await r.set("status", 1)

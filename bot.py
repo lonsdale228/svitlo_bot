@@ -9,6 +9,9 @@ from loader import bot, dp, r, logger
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import aiohttp
 
+from models import Zone
+from utils import time_format, get_next_zones, zones, time_with_tz
+
 MY_ID = 317465871
 DTEK_UPDATE_INTERVAL = 10
 MSG_UPDATE_INTERVAL = 10
@@ -21,33 +24,6 @@ HOUSE_NUM = "10"
 # REGION_NAME = "м. Одеса"
 # STREET_NAME = "вул. Інглезі"
 # HOUSE_NUM = "1"
-
-def time_format(seconds, is_striped=False) -> str:
-    if seconds is not None:
-        seconds = int(seconds)
-        d = seconds // (3600 * 24)
-        h = seconds // 3600 % 24
-        m = seconds % 3600 // 60
-        s = seconds % 3600 % 60
-        if is_striped:
-            if d > 0:
-                return '{:02d}:{:02d}:{:02d}:{:02d}'.format(d, h, m, s)
-            elif h > 0:
-                return '{:02d}:{:02d}:{:02d}'.format(h, m, s)
-            elif m > 0:
-                return '{:02d}:{:02d}'.format(m, s)
-            elif s > 0:
-                return '{:02d}'.format(s)
-        else:
-            if d > 0:
-                return '{:02d} днів {:02d} годин {:02d} хвилин {:02d} сек'.format(d, h, m, s)
-            elif h > 0:
-                return '{:02d} годин {:02d} хвилин {:02d} секунд'.format(h, m, s)
-            elif m > 0:
-                return '{:02d} хвилин {:02d} сек'.format(m, s)
-            elif s > 0:
-                return '{:02d} сек'.format(s)
-    return '-'
 
 
 def to_int_or_none(val):
@@ -91,7 +67,7 @@ async def send_change_msg(is_on: int):
         prev_msg_text = (f"<i>Світла не було: \n"
                          f"з {off_time.strftime("%H:%M:%S")} по {now_strf} \n"
                          f"Протягом: \n"
-                         f"{time_format((now-off_time).total_seconds())}</i>")
+                         f"{time_format((now - off_time).total_seconds())}</i>")
 
     else:
         msg_text += "⚫️Світло зникло!"
@@ -99,7 +75,7 @@ async def send_change_msg(is_on: int):
         prev_msg_text = (f"<i>Світло було: \n"
                          f"з {on_time.strftime("%H:%M:%S")} по {now_strf} \n"
                          f"Протягом: \n"
-                         f"{time_format((now-on_time).total_seconds())}</i>")
+                         f"{time_format((now - on_time).total_seconds())}</i>")
     msg = await bot.send_message(MY_ID, msg_text, disable_notification=False)
 
     await bot.edit_message_text(text=prev_msg_text, chat_id=MY_ID, message_id=prev_msg_id)
@@ -168,6 +144,8 @@ async def send_notification(b: Bot, first_start=True):
 
 
 async def msg_editor(b: Bot, lock):
+    global zones
+
     async with lock:
         msg_to_edit = await r.get('edit_msg_id')
     dtek_last_update = await r.get('dtek_update_timestamp')
@@ -194,12 +172,23 @@ async def msg_editor(b: Bot, lock):
     if sub_type == "":
         sub_type = "Наразі відключень за ДТЕК НЕМАЄ"
 
+    current_hour = time_with_tz().hour
+    current_weekday = time_with_tz().weekday()
+    current_cell = current_hour + current_weekday * 24
+
+    zone_list: list[Zone] = get_next_zones(zones, current_cell)
+
     msg_text = (f"<b>{electricity_status_text}</b> \n"
-                f"{time_av} \n"
-                f"<i>Останнє дані з ДТЕКу: \n"
-                f"{sub_type}</i> \n"
-                f"Оновлено о: {dtek_last_update} ")
-                # f"Оновлено о {datetime.datetime.now().strftime("%H:%M:%S")}")
+                f"{time_av} \n")
+
+    for zone in zone_list:
+        msg_text += (f"До {zone.zone_name} о {zone.time}: \n"
+                     f"{zone.time_left} \n")
+
+    msg_text += (f"<i>Останнє дані з ДТЕКу: \n"
+                 f"{sub_type}</i> \n"
+                 f"Оновлено о: {dtek_last_update} ")
+    # f"Оновлено о {datetime.datetime.now().strftime("%H:%M:%S")}")
     if start_date != "":
         msg_text += ("\n"
                      f"Вимкнення о {start_date}")

@@ -8,6 +8,8 @@ TOKEN = os.environ.get("BOT_TOKEN")
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode='HTML'))
 dp = Dispatcher()
 
+TIMEZONE = 'Europe/Kyiv'
+
 if os.name == 'nt':
     r = redis.from_url("redis://127.0.0.1:6379", encoding="utf8", decode_responses=True)
 else:
