@@ -19,6 +19,8 @@ services:
       - "6379:6379"
     volumes:
       - redis-data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
   api:
     build:
       context: ./api
@@ -32,4 +34,5 @@ services:
     environment:
       TZ: "Europe/Kyiv"
 volumes:
-  redis_data:
+  redis-data:
+    driver: local
