@@ -19,6 +19,7 @@ services:
     volumes:
       - /path/to/local/dаta:/root/redis
       - /path/to/local/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./data:/data
   api:
     build:
       context: ./api
