@@ -35,7 +35,7 @@ def to_int_or_none(val):
 
 
 async def check_electricity_change(lock):
-    pause = await r.get('pause')
+    pause = int(await r.get('pause'))
 
     if pause != 1:
         current_status = await r.get('status')
@@ -56,6 +56,7 @@ async def check_electricity_change(lock):
             ...
     else:
         logger.info("Paused...")
+
 
 async def send_change_msg(is_on: int):
     msg_text = f""
@@ -79,6 +80,8 @@ async def send_change_msg(is_on: int):
                          f"з {off_time.strftime("%H:%M:%S")} по {now_strf} \n"
                          f"Протягом: \n"
                          f"{time_format((now.replace(tzinfo=tz_info_off_time) - off_time).total_seconds())}</i>")
+        prev_msg_text += ("\n\n"
+                          f"<a href='{DONATE_LINK}'>До чаю</a>")
 
     else:
         msg_text += "⚫️Світло зникло!"
@@ -87,6 +90,8 @@ async def send_change_msg(is_on: int):
                          f"з {on_time.strftime("%H:%M:%S")} по {now_strf} \n"
                          f"Протягом: \n"
                          f"{time_format((now.replace(tzinfo=tz_info_on_time) - on_time).total_seconds())}</i>")
+        prev_msg_text += ("\n\n"
+                          f"<a href='{DONATE_LINK}'>До чаю</a>")
     msg = await bot.send_message(MY_ID, msg_text, disable_notification=False)
 
     await bot.edit_message_text(text=prev_msg_text, chat_id=MY_ID, message_id=prev_msg_id)
@@ -232,11 +237,15 @@ async def msg_editor(b: Bot, lock):
 async def set_start_values():
     on_time = await r.get("on_time")
     off_time = await r.get("off_time")
+    pause = await r.get("pause")
+
     now = datetime.datetime.now().timestamp()
     if not on_time:
         await r.set("on_time", now)
     if not off_time:
         await r.set("off_time", now)
+    if not pause:
+        await r.set("pause", 0)
 
 
 async def main():

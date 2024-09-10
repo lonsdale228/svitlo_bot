@@ -10,9 +10,6 @@ services:
       - redis
     environment:
       TZ: "Europe/Kyiv"
-    volumes:
-      - "/etc/localtime:/etc/localtime:ro"
-      - "/etc/timezone:/etc/timezone:ro"
 
   redis:
     image: redis:latest
@@ -34,6 +31,5 @@ services:
       - redis
     environment:
       TZ: "Europe/Kyiv"
-    volumes:
-      - "/etc/localtime:/etc/localtime:ro"
-      - "/etc/timezone:/etc/timezone:ro"
+volumes:
+  redis_data:
