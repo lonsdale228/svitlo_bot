@@ -61,7 +61,7 @@ def get_next_item(arr, current_pos, shag=0):
 
 
 def get_next_non_repeatable(arr, current_pos):
-    itm = arr[current_pos]
+    itm = get_next_item(arr, current_pos)
     k = 0
     while itm == get_next_item(arr, current_pos, k):
         k += 1
