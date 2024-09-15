@@ -17,7 +17,7 @@ from utils import time_format, get_next_zones, zones, time_with_tz, zone_to_stri
 import handlers
 
 MY_ID = -1001605272630
-DTEK_UPDATE_INTERVAL = 40
+DTEK_UPDATE_INTERVAL = 90
 MSG_UPDATE_INTERVAL = 10
 REGION_NAME = "с. Лиманка"
 STREET_NAME = "вул. Затишна"
@@ -260,7 +260,7 @@ async def main():
     await dtek_checker(r)
     await msg_editor(bot, job_lock)
     scheduler.add_job(check_electricity_change, 'interval', seconds=1, id='checker', args=(job_lock,))
-    scheduler.add_job(dtek_checker, 'interval', seconds=DTEK_UPDATE_INTERVAL, jitter=1, args=(r,))
+    scheduler.add_job(dtek_checker, 'interval', seconds=DTEK_UPDATE_INTERVAL, jitter=20, args=(r,))
     scheduler.add_job(msg_editor, 'interval', seconds=MSG_UPDATE_INTERVAL, args=(bot, job_lock), id='editor')
     scheduler.start()
 
