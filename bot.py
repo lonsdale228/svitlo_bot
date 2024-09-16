@@ -16,7 +16,7 @@ from redis_loader import r
 from utils import time_format, get_next_zones, zones, time_with_tz, zone_to_string
 import handlers
 
-MY_ID = -1001605272630
+MY_ID = os.getenv('CHANNEL_ID')
 DTEK_UPDATE_INTERVAL = 90
 MSG_UPDATE_INTERVAL = 10
 REGION_NAME = "с. Лиманка"
