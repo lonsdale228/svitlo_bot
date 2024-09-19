@@ -68,7 +68,7 @@ async def send_status(request: StatusRequest, req: Request):
 
 
 async def run():
-    config = uvicorn.Config(app, host="0.0.0.0", port=1889, log_level="error")
+    config = uvicorn.Config(app, host="0.0.0.0", port=1889, log_level="info")
     server = uvicorn.Server(config)
     await server.serve()
 
