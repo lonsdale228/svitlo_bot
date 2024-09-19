@@ -238,6 +238,7 @@ async def set_start_values():
     on_time = await r.get("on_time")
     off_time = await r.get("off_time")
     pause = await r.get("pause")
+    last_ping_update = await r.get("last_ping_update")
 
     now = datetime.datetime.now().timestamp()
     if not on_time:
@@ -246,6 +247,8 @@ async def set_start_values():
         await r.set("off_time", now)
     if not pause:
         await r.set("pause", 0)
+    if not last_ping_update:
+        await r.set("last_ping_update", str(now))
 
 
 async def main():

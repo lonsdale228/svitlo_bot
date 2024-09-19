@@ -1,14 +1,22 @@
 import asyncio
+import datetime
 import os
+
+import pytz
 import redis.asyncio as redis
 import uvicorn
 from fastapi import FastAPI, Depends, Request
 from pydantic import BaseModel
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
+
 app = FastAPI()
 
+TIMEZONE = 'Europe/Kyiv'
+
 API_KEY = os.getenv("API_KEY")
+
+
 @app.on_event("startup")
 async def startup():
     if os.name == 'nt':
@@ -22,6 +30,10 @@ if os.name == 'nt':
     r = redis.from_url("redis://127.0.0.1:6379", encoding="utf8", decode_responses=True)
 else:
     r = redis.from_url("redis://redis:6379", encoding="utf8", decode_responses=True)
+
+
+def time_with_tz():
+    return datetime.datetime.now(tz=pytz.timezone(TIMEZONE))
 
 
 class StatusRequest(BaseModel):
@@ -48,6 +60,8 @@ async def send_status(request: StatusRequest, req: Request):
         if status == "off":
             print("now is disable")
             await r.set("status", 0)
+
+        await r.set("last_ping_update", str(time_with_tz().timestamp()))
         return {"message": "Status received", "status": status}
     else:
         return {"message": "API key not available"}
