@@ -30,5 +30,5 @@ async def resume_bot(message: Message):
 
 @router.message(Command("last_ping_update"))
 async def last_update_bot(message: Message):
-    last_update_time: datetime.datetime = await r.get("last_ping_update")
+    last_update_time: datetime.datetime = datetime.datetime.fromtimestamp(float(await r.get("last_ping_update")))
     await message.answer(last_update_time.strftime("%Y-%m-%d %H:%M:%S"))
