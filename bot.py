@@ -60,7 +60,7 @@ async def check_electricity_change(lock):
 
 async def send_change_msg(is_on: int):
     msg_text = f""
-    print(is_on, type(is_on))
+
     now = time_with_tz()
     now_strf = now.strftime("%H:%M:%S")
 
@@ -183,12 +183,12 @@ async def msg_editor(b: Bot, lock):
         electricity_status_text += "💡Світло є!"
         time_av = (f"Світло присутнє протягом: \n"
                    f"{time_format((now.replace(tzinfo=tz_info_on_time) - on_time).total_seconds())} \n"
-                   f"Увімкнено о {on_time.strftime('%H:%M:%S')}")
+                   f"Увімкнено о {on_time.strftime('%H:%M:%S %d.%m')}")
     else:
         electricity_status_text += "⚫️Світла немає!"
         time_av = (f"Світло відсутнє протягом: \n"
                    f"{time_format((now.replace(tzinfo=tz_info_off_time) - off_time).total_seconds())} \n"
-                   f"Вимкнено о {off_time.strftime('%H:%M:%S')}")
+                   f"Вимкнено о {off_time.strftime('%H:%M:%S %d.%m')}")
 
     if sub_type == "":
         sub_type = "Наразі відключень НЕМАЄ"
