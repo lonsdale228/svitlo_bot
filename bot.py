@@ -219,8 +219,8 @@ async def msg_editor(b: Bot, lock):
         msg_text += ("\n"
                      f"Вимкнення о {start_date}")
     if end_date != "":
-        msg_text += ("\n"
-                     f"Увімкення о {end_date}")
+        msg_text += ("\n\n"
+                     f"<b>Відновлення о {end_date}</b>")
 
     msg_text += ("\n\n"
                  f"<a href='{DONATE_LINK}'>До чаю</a>")
