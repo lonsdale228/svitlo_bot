@@ -206,12 +206,15 @@ async def msg_editor(b: Bot, lock):
                  f"Зараз {zone_to_string(zones[current_cell])[0]} \n"
                  f"---------------------\n")
 
-    for zone in zone_list:
-        msg_text += (f"До {zone.zone_name[1]} о {zone.time}: \n"
-                     f"{zone.time_left} \n")
+    use_schedules = to_int_or_none(await r.get("enable_schedule"))
 
-    msg_text += (f"---------------------\n"
-                 f"Останні дані з ДТЕКу: \n"
+    if use_schedules:
+        for zone in zone_list:
+            msg_text += (f"До {zone.zone_name[1]} о {zone.time}: \n"
+                         f"{zone.time_left} \n")
+        msg_text += "---------------------\n"
+
+    msg_text += (f"Останні дані з ДТЕКу: \n"
                  f"<i>{sub_type}</i> \n"
                  f"Оновлено о: {dtek_last_update} ")
 
