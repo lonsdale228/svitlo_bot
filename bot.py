@@ -214,7 +214,7 @@ async def msg_editor(b: Bot, lock):
                          f"{zone.time_left} \n")
         msg_text += "---------------------\n"
     else:
-        msg_text += "---------------------"
+        msg_text += "---------------------\n"
 
     msg_text += (f"Останні дані з ДТЕКу: \n"
                  f"<i>{sub_type}</i> \n"
