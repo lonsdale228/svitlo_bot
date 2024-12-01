@@ -258,3 +258,4 @@ fabric.properties
 
 /.env
 /api/.env
+!/config.py
