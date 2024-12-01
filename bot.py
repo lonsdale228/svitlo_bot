@@ -13,6 +13,7 @@ import aiohttp
 
 from models import Zone
 from redis_loader import r
+from send_request import send_on_request, send_off_request
 from utils import time_format, get_next_zones, zones, time_with_tz, zone_to_string
 import handlers
 
@@ -73,6 +74,10 @@ async def send_change_msg(is_on: int):
     prev_msg_id = int(await r.get("edit_msg_id"))
 
     if is_on == 1:
+
+        # send post
+        await send_on_request()
+
         msg_text += "💡Світло з'явилося!"
         await r.set("on_time", str(now.timestamp()))
 
@@ -84,6 +89,8 @@ async def send_change_msg(is_on: int):
                           f"<a href='{DONATE_LINK}'>До чаю</a>")
 
     else:
+        # send post
+        await send_off_request()
         msg_text += "⚫️Світло зникло!"
         await r.set("off_time", str(now.timestamp()))
         prev_msg_text = (f"<i>Світло було: \n"
