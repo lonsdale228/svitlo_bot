@@ -76,7 +76,7 @@ async def send_change_msg(is_on: int):
     if is_on == 1:
 
         # send post
-        await send_on_request()
+        asyncio.create_task(send_on_request())
 
         msg_text += "💡Світло з'явилося!"
         await r.set("on_time", str(now.timestamp()))
@@ -90,7 +90,7 @@ async def send_change_msg(is_on: int):
 
     else:
         # send post
-        await send_off_request()
+        asyncio.create_task(send_off_request())
         msg_text += "⚫️Світло зникло!"
         await r.set("off_time", str(now.timestamp()))
         prev_msg_text = (f"<i>Світло було: \n"
