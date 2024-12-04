@@ -265,7 +265,7 @@ async def set_start_values():
 
 async def main():
     job_lock = asyncio.Lock()
-
+    await bot.delete_webhook()
     await set_start_values()
     msg_to_edit = await r.get("edit_msg_id")
     if msg_to_edit is None:
