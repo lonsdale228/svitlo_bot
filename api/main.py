@@ -1,6 +1,8 @@
 import asyncio
 import datetime
 import os
+from contextlib import asynccontextmanager
+from math import ceil
 
 import pytz
 import redis.asyncio as redis
@@ -10,26 +12,28 @@ from pydantic import BaseModel
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
 
-app = FastAPI()
 
 TIMEZONE = 'Europe/Kyiv'
 
 API_KEY = os.getenv("API_KEY")
 
+@asynccontextmanager
+async def lifespan(_: FastAPI):
 
-@app.on_event("startup")
-async def startup():
     if os.name == 'nt':
         redis_connection = redis.from_url("redis://127.0.0.1:6379", encoding="utf-8", decode_responses=True)
     else:
         redis_connection = redis.from_url("redis://redis:6379", encoding="utf-8", decode_responses=True)
-    await FastAPILimiter.init(redis_connection)
 
+    await FastAPILimiter.init(redis_connection)
+    yield
+    await FastAPILimiter.close()
 
 if os.name == 'nt':
     r = redis.from_url("redis://127.0.0.1:6379", encoding="utf8", decode_responses=True)
 else:
     r = redis.from_url("redis://redis:6379", encoding="utf8", decode_responses=True)
+
 
 
 def time_with_tz():
@@ -41,10 +45,13 @@ class StatusRequest(BaseModel):
     value: str
 
 
-@app.get("/get_status", dependencies=[Depends(RateLimiter(times=60, seconds=60))])
-async def get_status():
-    status = await r.get("status")
-    return status
+app = FastAPI(docs_url=None, redoc_url=None, lifespan=lifespan)
+
+
+@app.get("/get_status", dependencies=[Depends(RateLimiter(times=1, seconds=9))])
+async def get_status(req: Request):
+    stat = await r.get("status")
+    return stat
 
 
 @app.post("/send_status", dependencies=[Depends(RateLimiter(times=100, seconds=60))])
@@ -66,12 +73,5 @@ async def send_status(request: StatusRequest, req: Request):
     else:
         return {"message": "API key not available"}
 
-
-async def run():
-    config = uvicorn.Config(app, host="0.0.0.0", port=1889, log_level="error")
-    server = uvicorn.Server(config)
-    await server.serve()
-
-
 if __name__ == "__main__":
-    asyncio.run(run())
+    uvicorn.run(app, host="0.0.0.0", port=1889, log_level="info")
