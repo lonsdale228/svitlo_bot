@@ -51,27 +51,27 @@ RATE_LIMIT = 100
 BAN_DURATION = 600
 RATE_LIMIT_WINDOW = 60
 
-@app.middleware("http")
-async def rate_limiter(request: Request, call_next):
-    user_id = request.client.host
-    ban_key = f"ban:{user_id}"
-    count_key = f"count:{user_id}"
-
-    is_banned = await r.get(ban_key)
-    if is_banned:
-        return Response(status_code=403, content="You are banned. Please wait 10 minutes.")
-
-    current_count = await r.incr(count_key)
-
-    if current_count == 1:
-        await r.expire(count_key, RATE_LIMIT_WINDOW)
-
-    if current_count > RATE_LIMIT:
-        await r.set(ban_key, "1", ex=BAN_DURATION)
-        return Response(status_code=403, content="You are banned. Please wait 10 minutes.")
-
-    response = await call_next(request)
-    return response
+# @app.middleware("http")
+# async def rate_limiter(request: Request, call_next):
+#     user_id = request.client.host
+#     ban_key = f"ban:{user_id}"
+#     count_key = f"count:{user_id}"
+#
+#     is_banned = await r.get(ban_key)
+#     if is_banned:
+#         return Response(status_code=403, content="You are banned. Please wait 10 minutes.")
+#
+#     current_count = await r.incr(count_key)
+#
+#     if current_count == 1:
+#         await r.expire(count_key, RATE_LIMIT_WINDOW)
+#
+#     if current_count > RATE_LIMIT:
+#         await r.set(ban_key, "1", ex=BAN_DURATION)
+#         return Response(status_code=403, content="You are banned. Please wait 10 minutes.")
+#
+#     response = await call_next(request)
+#     return response
 
 @app.get("/get_status", dependencies=[Depends(RateLimiter(times=1, seconds=9))])
 async def get_status(req: Request):
