@@ -42,3 +42,15 @@ async def disable_schedule_bot(message: Message):
 async def disable_schedule_bot(message: Message):
     await r.set("enable_schedule", 1)
     await message.answer("Schedule enabled!")
+
+@router.message(Command("status"))
+async def status_bot(message: Message):
+    status = await r.get("status")
+    last_update_time: datetime.datetime = datetime.datetime.fromtimestamp(float(await r.get("last_ping_update")))
+    now = datetime.datetime.now()
+    api_uniq_user_count = await r.scard("api_users")
+
+    await message.answer(f"Світло: {status} \n"
+                         f"Last request: {last_update_time} \n"
+                         f"{(now - last_update_time).total_seconds()} ago \n"
+                         f"Uniq_user_count: {api_uniq_user_count}")
