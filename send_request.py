@@ -25,3 +25,14 @@ async def send_off_request():
                     await send_off_request()
     except Exception as e:
         logger.error(e)
+
+
+
+# async def send_request(is_on: bool):
+#     status_code = None
+#     while status_code!=200:
+#         async with aiohttp.ClientSession() as session:
+#             async with session.get(url_off) as response:
+#                 status_code = response.status
+#                 await asyncio.sleep(SLEEP_TIME)
+#                 await send_off_request()

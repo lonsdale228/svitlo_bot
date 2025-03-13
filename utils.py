@@ -10,18 +10,6 @@ from models import Zone
 time = [f"0{i}:00:00" if i < 10 else f"{i}:00:00" for i in range(24)]
 
 # TODO parsing data from web
-zones = ['no', 'maybe', 'maybe', 'maybe', 'yes', 'no', 'no', 'no', 'maybe', 'maybe', 'yes', 'yes', 'yes', 'no', 'no',
-         'no', 'maybe', 'maybe', 'maybe', 'yes', 'yes', 'yes', 'no', 'no', 'no', 'no', 'maybe', 'maybe', 'yes', 'yes',
-         'yes', 'no', 'no', 'no', 'maybe', 'maybe', 'maybe', 'yes', 'yes', 'yes', 'no', 'no', 'no', 'maybe', 'maybe',
-         'maybe', 'yes', 'yes', 'yes', 'no', 'no', 'no', 'maybe', 'maybe', 'maybe', 'yes', 'yes', 'yes', 'no', 'no',
-         'no', 'maybe', 'maybe', 'maybe', 'yes', 'yes', 'yes', 'no', 'no', 'no', 'maybe', 'maybe', 'maybe', 'yes',
-         'yes', 'yes', 'no', 'no', 'no', 'maybe', 'maybe', 'maybe', 'yes', 'yes', 'yes', 'no', 'no', 'no', 'maybe',
-         'maybe', 'maybe', 'yes', 'yes', 'yes', 'no', 'no', 'no', 'maybe', 'maybe', 'maybe', 'yes', 'yes', 'yes', 'no',
-         'no', 'no', 'maybe', 'maybe', 'maybe', 'yes', 'yes', 'yes', 'no', 'no', 'no', 'maybe', 'maybe', 'maybe', 'yes',
-         'yes', 'yes', 'no', 'no', 'no', 'maybe', 'maybe', 'maybe', 'yes', 'yes', 'yes', 'no', 'no', 'no', 'maybe',
-         'maybe', 'maybe', 'yes', 'yes', 'yes', 'no', 'no', 'no', 'maybe', 'maybe', 'maybe', 'yes', 'yes', 'yes', 'no',
-         'no', 'no', 'maybe', 'maybe', 'maybe', 'yes', 'yes', 'yes', 'no', 'no', 'no', 'maybe', 'maybe', 'maybe', 'yes',
-         'yes', 'yes', 'no', 'no']
 
 
 def time_with_tz():
@@ -89,7 +77,7 @@ def zone_to_string(zone: str) -> tuple[str, str]:
             return 'СІРА ЗОНА', 'СІРОЇ ЗОНИ'
 
 
-def get_next_zones(zones: list, current_cell, num_zones: int = 5):
+def get_next_zones(zones: list, current_cell, num_zones: int = 5, ignore_not_black: bool = True):
     l = []
     index = current_cell
     for _ in range(num_zones):
