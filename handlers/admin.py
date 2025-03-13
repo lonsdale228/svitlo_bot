@@ -28,20 +28,35 @@ async def resume_bot(message: Message):
     await message.answer("Bot resumed!")
 
 
+@router.message(Command("pause_request"))
+async def pause_request_bot(message: Message):
+    await r.set("send_request", 0)
+    await message.answer("Requests paused!")
+
+
+@router.message(Command("resume_request"))
+async def resume_request_bot(message: Message):
+    await r.set("send_request", 1)
+    await message.answer("Requests resumed!")
+
+
 @router.message(Command("last_ping_update"))
 async def last_update_bot(message: Message):
     last_update_time: datetime.datetime = datetime.datetime.fromtimestamp(float(await r.get("last_ping_update")))
     await message.answer(last_update_time.strftime("%Y-%m-%d %H:%M:%S"))
+
 
 @router.message(Command("disable_schedule"))
 async def disable_schedule_bot(message: Message):
     await r.set("enable_schedule", 0)
     await message.answer("Schedule disabled!")
 
+
 @router.message(Command("enable_schedule"))
 async def disable_schedule_bot(message: Message):
     await r.set("enable_schedule", 1)
     await message.answer("Schedule enabled!")
+
 
 @router.message(Command("status"))
 async def status_bot(message: Message):

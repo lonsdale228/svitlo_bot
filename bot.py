@@ -74,8 +74,11 @@ async def send_change_msg(is_on: int):
 
     prev_msg_id = int(await r.get("edit_msg_id"))
 
+    send_request = int(await r.get("send_request"))
+
     if is_on == 1:
-        # asyncio.create_task(send_on_request())
+        if send_request == 1:
+            asyncio.create_task(send_on_request())
         msg_text += "💡Світло з'явилося!"
         await r.set("on_time", str(now.timestamp()))
 
@@ -88,7 +91,8 @@ async def send_change_msg(is_on: int):
 
     else:
         # send post
-        # asyncio.create_task(send_off_request())
+        if send_request == 1:
+            asyncio.create_task(send_off_request())
         msg_text += "⚫️Світло зникло!"
         await r.set("off_time", str(now.timestamp()))
         prev_msg_text = (f"<i>Світло було: \n"
@@ -278,6 +282,7 @@ async def set_start_values():
     on_time = await r.get("on_time")
     off_time = await r.get("off_time")
     pause = await r.get("pause")
+    send_request = await r.get("send_request")
     last_ping_update = await r.get("last_ping_update")
 
     now = datetime.datetime.now().timestamp()
@@ -289,6 +294,8 @@ async def set_start_values():
         await r.set("pause", 0)
     if not last_ping_update:
         await r.set("last_ping_update", str(now))
+    if not send_request:
+        await r.set("send_request", 0)
 
 
 async def main():

@@ -9,6 +9,7 @@ SLEEP_TIME = 60
 url_on = os.getenv("url_on")
 url_off = os.getenv("url_off")
 
+
 async def send_on_request():
     try:
         async with aiohttp.ClientSession() as session:
@@ -19,6 +20,7 @@ async def send_on_request():
     except Exception as e:
         logger.error(e)
 
+
 async def send_off_request():
     try:
         async with aiohttp.ClientSession() as session:
@@ -28,8 +30,6 @@ async def send_off_request():
                     await send_off_request()
     except Exception as e:
         logger.error(e)
-
-
 
 # async def send_request(is_on: bool):
 #     status_code = None
