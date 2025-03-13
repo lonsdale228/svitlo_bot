@@ -1,10 +1,13 @@
 import asyncio
+import os
 
 import aiohttp
-from config import url_on, url_off
 from loader import logger
 
 SLEEP_TIME = 60
+
+url_on = os.getenv("url_on")
+url_off = os.getenv("url_off")
 
 async def send_on_request():
     try:
