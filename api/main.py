@@ -16,13 +16,16 @@ TIMEZONE = 'Europe/Kyiv'
 
 API_KEY = os.getenv("API_KEY")
 
+username = os.getenv("REDIS_USERNAME")
+password = os.getenv("REDIS_PASSWORD")
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
 
     if os.name == 'nt':
-        redis_connection = redis.from_url("redis://127.0.0.1:6379", encoding="utf-8", decode_responses=True)
+        redis_connection = redis.from_url(f"redis://{username}:{password}127.0.0.1:6379", encoding="utf-8", decode_responses=True)
     else:
-        redis_connection = redis.from_url("redis://redis:6379", encoding="utf-8", decode_responses=True)
+        redis_connection = redis.from_url(f"redis://{username}:{password}redis:6379", encoding="utf-8", decode_responses=True)
 
     await FastAPILimiter.init(redis_connection)
     yield
