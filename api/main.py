@@ -23,6 +23,10 @@ logging.error(f"Error: {password}")
 @asynccontextmanager
 async def lifespan(_: FastAPI):
 
+    username = os.getenv("REDIS_USERNAME")
+    password = os.getenv("REDIS_PASSWORD")
+    logging.error(f"Error: {password}")
+
     if os.name == 'nt':
         redis_connection = redis.from_url(f"redis://:{password}@127.0.0.1:6379", encoding="utf-8", decode_responses=True)
     else:
