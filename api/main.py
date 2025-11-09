@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import logging
 import os
 from contextlib import asynccontextmanager
 
@@ -18,7 +19,7 @@ API_KEY = os.getenv("API_KEY")
 
 username = os.getenv("REDIS_USERNAME")
 password = os.getenv("REDIS_PASSWORD")
-
+logging.info(password)
 @asynccontextmanager
 async def lifespan(_: FastAPI):
 
