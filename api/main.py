@@ -19,7 +19,7 @@ API_KEY = os.getenv("API_KEY")
 
 username = os.getenv("REDIS_USERNAME")
 password = os.getenv("REDIS_PASSWORD")
-logging.info(password)
+logging.error(f"Error: {password}")
 @asynccontextmanager
 async def lifespan(_: FastAPI):
 
