@@ -22,14 +22,9 @@ services:
     volumes:
       - redis-data:/data
       - ./redis.conf:/usr/local/etc/redis/redis.conf
-    environment:
-      - REDIS_USERNAME=${REDIS_USERNAME}
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-    command: >
-      sh -c 'redis-server /usr/local/etc/redis/redis.conf 
-      --protected-mode no 
-      --user default off
-      --user $$REDIS_USERNAME on >$$REDIS_PASSWORD ~* &* +@all'
+    env_file:
+      - .env
+    command: redis-server /usr/local/etc/redis/redis.conf --protected-mode no
   
 
   api:

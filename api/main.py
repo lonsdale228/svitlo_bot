@@ -23,18 +23,18 @@ password = os.getenv("REDIS_PASSWORD")
 async def lifespan(_: FastAPI):
 
     if os.name == 'nt':
-        redis_connection = redis.from_url(f"redis://{username}:{password}@127.0.0.1:6379", encoding="utf-8", decode_responses=True)
+        redis_connection = redis.from_url(f"redis://:{password}@127.0.0.1:6379", encoding="utf-8", decode_responses=True)
     else:
-        redis_connection = redis.from_url(f"redis://{username}:{password}@redis:6379", encoding="utf-8", decode_responses=True)
+        redis_connection = redis.from_url(f"redis://:{password}@redis:6379", encoding="utf-8", decode_responses=True)
 
     await FastAPILimiter.init(redis_connection)
     yield
     await FastAPILimiter.close()
 
 if os.name == 'nt':
-    r = redis.from_url(f"redis://{username}:{password}@127.0.0.1:6379", encoding="utf8", decode_responses=True)
+    r = redis.from_url(f"redis://:{password}@127.0.0.1:6379", encoding="utf8", decode_responses=True)
 else:
-    r = redis.from_url(f"redis://{username}:{password}@redis:6379", encoding="utf8", decode_responses=True)
+    r = redis.from_url(f"redis://:{password}@redis:6379", encoding="utf8", decode_responses=True)
 
 
 
