@@ -24,13 +24,9 @@ services:
       - ./redis.conf:/usr/local/etc/redis/redis.conf
     env_file:
       - .env
-    command:
-      [
-        "redis-server",
-        "/usr/local/etc/redis/redis.conf",
-        "--protected-mode", "no",
-        "--user", "${REDIS_USER} on >${REDIS_PASSWORD} allcommands allkeys",
-      ]
+    command: >
+      sh -c "redis-server /usr/local/etc/redis/redis.conf --protected-mode no --user '${REDIS_USER} on >${REDIS_PASSWORD} allcommands allkeys'"
+  
 
   api:
     build:
