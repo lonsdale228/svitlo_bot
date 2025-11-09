@@ -273,10 +273,7 @@ async def msg_editor(b: Bot, lock):
     if (prev_msg_text is None) or (msg_text == prev_msg_text):
         logger.debug("same or none, skipped...")
     else:
-        try:
-            await b.edit_message_text(msg_text, chat_id=MY_ID, message_id=msg_to_edit)
-        except Exception as e:
-            await b.send_message(msg_text, )
+        await b.edit_message_text(msg_text, chat_id=MY_ID, message_id=msg_to_edit)
     await r.set('prev_msg_text', msg_text)
 
 
