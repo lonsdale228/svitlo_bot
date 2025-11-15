@@ -1,9 +1,6 @@
 from io import BytesIO
 
 from PIL import Image
-from dotenv import load_dotenv
-
-load_dotenv()
 
 
 def crop_by_percent(

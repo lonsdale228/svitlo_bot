@@ -4,7 +4,6 @@ import os
 import nest_asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
-from dotenv import load_dotenv
 from pyrogram import Client
 import tgcrypto
 from handlers.admin import router
@@ -12,7 +11,6 @@ nest_asyncio.apply()
 
 
 
-load_dotenv()
 
 TOKEN = os.environ.get("BOT_TOKEN")
 bot = Bot(
