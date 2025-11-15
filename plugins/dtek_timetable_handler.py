@@ -10,7 +10,7 @@ from ocr.cv import crop_img
 
 dtek_chat_id = -1399067835  # @dtek_ua
 regex_filter_city = r"оде[сщ].*граф"
-my_id = os.getenv("CHANNEL_ID")
+my_id = int(os.getenv("CHANNEL_ID"))
 
 
 @Client.on_message(
