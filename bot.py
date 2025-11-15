@@ -13,6 +13,7 @@ from models import Zone
 from redis_loader import r
 from send_request import send_on_request, send_off_request
 from utils import time_format, get_next_zones, time_with_tz, zone_to_string
+from timetables import zones
 
 MY_ID = os.getenv('CHANNEL_ID')
 DTEK_UPDATE_INTERVAL = 90
