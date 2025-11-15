@@ -157,7 +157,7 @@ async def dtek_checker(redis: Redis):
         "Sec-Fetch-Dest": "empty",
         "Sec-Fetch-Mode": "cors",
         "Sec-Fetch-Site": "same-origin",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
         "X-Csrf-Token": "gJASGCjYpQvg7GGEDT4eIueld_RnbGIshdRB5sH4ZijGpmBbd5L2XJavKd00DlNsodUbkiAWUH7C7HaoicsEag==",
         "X-Requested-With": "XMLHttpRequest"
     }
@@ -295,6 +295,7 @@ async def set_start_values():
         await r.set("last_ping_update", str(now))
     if not send_request:
         await r.set("send_request", 0)
+
 
 
 async def main():
