@@ -17,8 +17,6 @@ my_id = int(os.getenv("CHANNEL_ID"))
     filters.chat([dtek_chat_id, "me"]) & filters.regex(regex_filter_city, re.IGNORECASE)
 )
 async def on_monitor_msg(client: Client, message: Message):
-    chat = await client.get_chat(message.chat.id)
-
     if message.media_group_id:
         group = await client.get_media_group(message.chat.id, message.id)
         msg = group[-1]
@@ -27,11 +25,7 @@ async def on_monitor_msg(client: Client, message: Message):
             file.seek(0)
             cropped_img = crop_img(file)
 
-            text = (
-                "⚠️ "
-                + message.caption.html
-                + f' \n\n<a href="{msg.link}">{chat.title}</a>'
-            )
+            text = "⚠️ " + message.caption.html
             text += f"\n\n<a href='{DONATE_LINK}'>До чаю</a>"
 
             await bot.send_photo(chat_id="me", photo=cropped_img, caption=text)
