@@ -18,8 +18,9 @@ my_id = int(os.getenv("CHANNEL_ID"))
 )
 async def on_monitor_msg(client: Client, message: Message):
     chat = await client.get_chat(message.chat.id)
+    message_link = f"https://t.me/{chat.username}/{message.id}"
     text = (
-        "⚠️ " + message.caption.html + f' \n\n<a href="{message.link}">{chat.title}</a>'
+        "⚠️ " + message.caption.html + f' \n\n<a href="{message_link}">{chat.title}</a>'
     )
     text += f"\n\n<a href='{DONATE_LINK}'>До чаю</a>"
     if message.media_group_id:
@@ -29,5 +30,5 @@ async def on_monitor_msg(client: Client, message: Message):
             file = await client.download_media(msg, in_memory=True)
             file.seek(0)
             cropped_img = crop_img(file)
-            await bot.send_photo(chat_id=my_id, photo=cropped_img, caption=text)
+            await bot.send_photo(chat_id="me", photo=cropped_img, caption=text)
 
