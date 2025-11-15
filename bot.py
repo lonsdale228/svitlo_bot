@@ -3,20 +3,16 @@ import datetime
 import json
 import os
 
-import pytz
+import aiohttp
 from aiogram import Bot
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from redis import Redis
 
-from loader import bot, dp, logger, TIMEZONE
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-import aiohttp
-
+from loader import bot, dp, logger, dtek_timetable_bot
 from models import Zone
 from redis_loader import r
 from send_request import send_on_request, send_off_request
 from utils import time_format, get_next_zones, time_with_tz, zone_to_string
-from timetables import zones
-import handlers
 
 MY_ID = os.getenv('CHANNEL_ID')
 DTEK_UPDATE_INTERVAL = 90
@@ -314,6 +310,7 @@ async def main():
     scheduler.add_job(msg_editor, 'interval', seconds=MSG_UPDATE_INTERVAL, args=(bot, job_lock), id='editor')
     scheduler.start()
 
+    await dtek_timetable_bot.start()
     await dp.start_polling(bot)
 
 
