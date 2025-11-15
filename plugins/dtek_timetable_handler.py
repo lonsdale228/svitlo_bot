@@ -28,5 +28,5 @@ async def on_monitor_msg(client: Client, message: Message):
             text = "⚠️ " + message.caption.html
             text += f"\n\n<a href='{DONATE_LINK}'>До чаю</a>"
 
-            await bot.send_photo(chat_id="me", photo=cropped_img, caption=text)
+            await bot.send_photo(chat_id=my_id, photo=cropped_img, caption=text)
 
