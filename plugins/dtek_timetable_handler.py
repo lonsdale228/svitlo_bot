@@ -9,7 +9,7 @@ from loader import dtek_timetable_bot as bot
 from ocr.cv import crop_img
 
 dtek_chat_id = -1399067835  # @dtek_ua
-regex_filter_city = r"оде[сщ].*граф"
+regex_filter_city = r"оде[сщ].*(граф|екстрен)"
 my_id = int(os.getenv("CHANNEL_ID"))
 
 
