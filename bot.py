@@ -219,11 +219,11 @@ async def msg_editor(b: Bot, lock):
     tz_info_off_time = off_time.tzinfo
     tz_info_on_time = on_time.tzinfo
 
-    text_ranges = (("Графік на сьогодні: \n"
-                   "Світло буде відсутнє \n"
+    text_ranges = (("Графік на сьогодні: \n" +
+                   "Світло буде відсутнє \n" +
                    "\n ".join(ranges_today)) +
-                   "\n "
-                   "<b>Графік на завтра:</b> \n"
+                   "\n " +
+                   "<b>Графік на завтра:</b> \n" +
                    "\n ".join(ranges_tomorrow))
 
     if status == 1:
