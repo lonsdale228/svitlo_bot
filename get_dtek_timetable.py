@@ -80,6 +80,11 @@ async def get_dtek_timetable() -> tuple[list[str], list[str], str]:
         async with session.get(dtek_url, headers=headers) as response:
             html = await response.text()
 
+            if "ROBOT" in html:
+                await asyncio.sleep(2)
+                await get_dtek_timetable()
+                return
+
             pattern = r"DisconSchedule\.fact\s*=\s*({.*})"
             match = re.search(pattern, html, flags=re.S)
             if not match:
