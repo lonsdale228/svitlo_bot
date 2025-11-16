@@ -14,7 +14,7 @@ my_id = int(os.getenv("CHANNEL_ID"))
 
 
 @Client.on_message(
-    filters.chat([dtek_chat_id, "me"]) & filters.regex(regex_filter_city, re.IGNORECASE)
+    filters.chat(dtek_chat_id) & filters.regex(regex_filter_city, re.IGNORECASE)
 )
 async def on_monitor_msg(client: Client, message: Message):
     if message.media_group_id:
