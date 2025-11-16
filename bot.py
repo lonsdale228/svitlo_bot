@@ -16,13 +16,13 @@ from send_request import send_on_request, send_off_request
 from utils import time_format, get_next_zones, time_with_tz, zone_to_string
 from timetables import zones
 
-MY_ID = os.getenv('CHANNEL_ID')
+MY_ID = os.getenv("CHANNEL_ID")
 DTEK_UPDATE_INTERVAL = 90
 MSG_UPDATE_INTERVAL = 10
 REGION_NAME = "с. Лиманка"
 STREET_NAME = "вул. Затишна"
 HOUSE_NUM = "10"
-DONATE_LINK = os.getenv('DONATE_LINK')
+DONATE_LINK = os.getenv("DONATE_LINK")
 
 
 # REGION_NAME = "м. Одеса"
@@ -35,23 +35,23 @@ def to_int_or_none(val):
 
 
 async def check_electricity_change(lock):
-    pause = int(await r.get('pause'))
+    pause = int(await r.get("pause"))
 
     if pause != 1:
-        current_status = await r.get('status')
-        prev_status = await r.get('prev_status')
+        current_status = await r.get("status")
+        prev_status = await r.get("prev_status")
 
         current_status = to_int_or_none(current_status)
         prev_status = to_int_or_none(prev_status)
 
         # at first start
         if (current_status is not None) and (prev_status is None):
-            await r.set('prev_status', current_status)
+            await r.set("prev_status", current_status)
 
         if current_status != prev_status:
             async with lock:
                 await send_change_msg(current_status)
-            await r.set('prev_status', current_status)
+            await r.set("prev_status", current_status)
         else:
             ...
     else:
@@ -80,12 +80,13 @@ async def send_change_msg(is_on: int):
         msg_text += "💡Світло з'явилося!"
         await r.set("on_time", str(now.timestamp()))
 
-        prev_msg_text = (f"<i>Світла не було: \n"
-                         f"з {off_time.strftime("%H:%M:%S")} по {now_strf} \n"
-                         f"Протягом: \n"
-                         f"{time_format((now.replace(tzinfo=tz_info_off_time) - off_time).total_seconds())}</i>")
-        prev_msg_text += ("\n\n"
-                          f"<a href='{DONATE_LINK}'>До чаю</a>")
+        prev_msg_text = (
+            f"<i>Світла не було: \n"
+            f"з {off_time.strftime('%H:%M:%S')} по {now_strf} \n"
+            f"Протягом: \n"
+            f"{time_format((now.replace(tzinfo=tz_info_off_time) - off_time).total_seconds())}</i>"
+        )
+        prev_msg_text += f"\n\n<a href='{DONATE_LINK}'>До чаю</a>"
 
     else:
         # send post
@@ -93,17 +94,19 @@ async def send_change_msg(is_on: int):
             asyncio.create_task(send_off_request())
         msg_text += "⚫️Світло зникло!"
         await r.set("off_time", str(now.timestamp()))
-        prev_msg_text = (f"<i>Світло було: \n"
-                         f"з {on_time.strftime("%H:%M:%S")} по {now_strf} \n"
-                         f"Протягом: \n"
-                         f"{time_format((now.replace(tzinfo=tz_info_on_time) - on_time).total_seconds())}</i>")
-        prev_msg_text += ("\n\n"
-                          f"<a href='{DONATE_LINK}'>До чаю</a>")
-
+        prev_msg_text = (
+            f"<i>Світло було: \n"
+            f"з {on_time.strftime('%H:%M:%S')} по {now_strf} \n"
+            f"Протягом: \n"
+            f"{time_format((now.replace(tzinfo=tz_info_on_time) - on_time).total_seconds())}</i>"
+        )
+        prev_msg_text += f"\n\n<a href='{DONATE_LINK}'>До чаю</a>"
 
     msg = await bot.send_message(MY_ID, msg_text, disable_notification=False)
 
-    await bot.edit_message_text(text=prev_msg_text, chat_id=MY_ID, message_id=prev_msg_id)
+    await bot.edit_message_text(
+        text=prev_msg_text, chat_id=MY_ID, message_id=prev_msg_id
+    )
 
     await r.set("prev_msg_id", prev_msg_id)
     await r.set("edit_msg_id", msg.message_id)
@@ -131,7 +134,7 @@ async def dtek_checker(redis: Redis):
         "Sec-Fetch-Site": "same-origin",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
         "X-Csrf-Token": "2YjUYfDglXl6mBJzW0UmAhUNUf9pLI-2rEOBU-6rUUXuw602l47MPBiheiAJDFBKU3U0uxAZ2fyeCcsCrNg6Kg==",
-        "X-Requested-With": "XMLHttpRequest"
+        "X-Requested-With": "XMLHttpRequest",
     }
 
     url = "https://www.dtek-oem.com.ua/ua/ajax"
@@ -157,7 +160,7 @@ async def dtek_checker(redis: Redis):
         "Sec-Fetch-Site": "same-origin",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
         "X-Csrf-Token": "gJASGCjYpQvg7GGEDT4eIueld_RnbGIshdRB5sH4ZijGpmBbd5L2XJavKd00DlNsodUbkiAWUH7C7HaoicsEag==",
-        "X-Requested-With": "XMLHttpRequest"
+        "X-Requested-With": "XMLHttpRequest",
     }
 
     payload = {
@@ -165,7 +168,7 @@ async def dtek_checker(redis: Redis):
         "data[0][name]": "city",
         "data[0][value]": REGION_NAME,
         "data[1][name]": "street",
-        "data[1][value]": STREET_NAME
+        "data[1][value]": STREET_NAME,
     }
 
     try:
@@ -179,38 +182,40 @@ async def dtek_checker(redis: Redis):
                 logger.debug(response_text)
                 js = json.loads(response_text)
                 await redis.set("dtek_update_timestamp", js["updateTimestamp"])
-                await redis.set("sub_type", js['data'][HOUSE_NUM]['sub_type'])
-                await redis.set("start_date", js['data'][HOUSE_NUM]['start_date'])
-                await redis.set("end_date", js['data'][HOUSE_NUM]['end_date'])
-                await redis.set("type", js['data'][HOUSE_NUM]['type'])
-                await redis.set("sub_type_reason", js['data'][HOUSE_NUM]['sub_type_reason'][0])
+                await redis.set("sub_type", js["data"][HOUSE_NUM]["sub_type"])
+                await redis.set("start_date", js["data"][HOUSE_NUM]["start_date"])
+                await redis.set("end_date", js["data"][HOUSE_NUM]["end_date"])
+                await redis.set("type", js["data"][HOUSE_NUM]["type"])
+                await redis.set(
+                    "sub_type_reason", js["data"][HOUSE_NUM]["sub_type_reason"][0]
+                )
     except Exception as e:
         logger.error(e)
 
 
 async def send_notification(b: Bot, first_start=True):
     if first_start:
-        msg = await b.send_message(MY_ID, 'Bot started!', disable_notification=True)
-        await r.set('edit_msg_id', msg.message_id)
+        msg = await b.send_message(MY_ID, "Bot started!", disable_notification=True)
+        await r.set("edit_msg_id", msg.message_id)
 
 
 async def msg_editor(b: Bot, lock):
     global zones, DONATE_LINK
 
     async with lock:
-        msg_to_edit = await r.get('edit_msg_id')
-    dtek_last_update = await r.get('dtek_update_timestamp')
-    status = await r.get('status')
-    sub_type = await r.get('sub_type')
+        msg_to_edit = await r.get("edit_msg_id")
+    dtek_last_update = await r.get("dtek_update_timestamp")
+    status = await r.get("status")
+    sub_type = await r.get("sub_type")
     now = time_with_tz()
     status = to_int_or_none(status)
-    end_date = await r.get('end_date')
+    end_date = await r.get("end_date")
     start_date = await r.get("start_date")
-    ranges_today = await r.get('ranges_today')
+    ranges_today = await r.get("ranges_today")
     ranges_today = json.loads(ranges_today)
-    ranges_tomorrow = await r.get('ranges_tomorrow')
+    ranges_tomorrow = await r.get("ranges_tomorrow")
     ranges_tomorrow = json.loads(ranges_tomorrow)
-    last_update_str = await r.get('last_update_str')
+    last_update_str = await r.get("last_update_str")
     electricity_status_text = ""
 
     off_time = datetime.datetime.fromtimestamp(float(await r.get("off_time")))
@@ -219,26 +224,39 @@ async def msg_editor(b: Bot, lock):
     tz_info_off_time = off_time.tzinfo
     tz_info_on_time = on_time.tzinfo
 
-    text_ranges = (("📅Графік на сьогодні: \n" +
-                   "Світло буде відсутнє \n🕓 " +
-                   " \n🕓 ".join(ranges_today)) +
-                   " \n\n" +
-                   "📅<b>Графік на завтра:</b> \n" +
-                   ("Світло буде відсутнє \n🕓 " +
-                   " \n🕓 ".join(ranges_tomorrow)) if ranges_tomorrow else "Відсутній")
+    tomorrow = (
+        (
+            "📅<b>Графік на завтра:</b> \n"
+            + "Світло буде відсутнє \n🕓 "
+            + " \n🕓 ".join(ranges_tomorrow)
+        )
+        if ranges_tomorrow
+        else "Відсутній"
+    )
+    text_ranges = (
+        (
+            "📅Графік на сьогодні: \n"
+            + "Світло буде відсутнє \n🕓 "
+            + " \n🕓 ".join(ranges_today)
+        )
+        + " \n\n"
+        + tomorrow
+    )
 
     if status == 1:
-        electricity_status_text += ("💡Світло є! \n"
-                                    "📍Совіньйон 1, Ольгіївська")
-        time_av = (f"Світло присутнє протягом: \n"
-                   f"{time_format((now.replace(tzinfo=tz_info_on_time) - on_time).total_seconds())} \n"
-                   f"🟢 Увімкнено о {on_time.strftime('%H:%M:%S (%d.%m)')}")
+        electricity_status_text += "💡Світло є! \n📍Совіньйон 1, Ольгіївська"
+        time_av = (
+            f"Світло присутнє протягом: \n"
+            f"{time_format((now.replace(tzinfo=tz_info_on_time) - on_time).total_seconds())} \n"
+            f"🟢 Увімкнено о {on_time.strftime('%H:%M:%S (%d.%m)')}"
+        )
     else:
-        electricity_status_text += ("⚫️Світла немає! \n"
-                                    "Совіньйон 1, Ольгіївська")
-        time_av = (f"Світло відсутнє протягом: \n"
-                   f"{time_format((now.replace(tzinfo=tz_info_off_time) - off_time).total_seconds())} \n"
-                   f"⚫️ Вимкнено о {off_time.strftime('%H:%M:%S (%d.%m)')}")
+        electricity_status_text += "⚫️Світла немає! \nСовіньйон 1, Ольгіївська"
+        time_av = (
+            f"Світло відсутнє протягом: \n"
+            f"{time_format((now.replace(tzinfo=tz_info_off_time) - off_time).total_seconds())} \n"
+            f"⚫️ Вимкнено о {off_time.strftime('%H:%M:%S (%d.%m)')}"
+        )
 
     if sub_type == "":
         sub_type = "Наразі відключень НЕМАЄ"
@@ -249,46 +267,44 @@ async def msg_editor(b: Bot, lock):
 
     zone_list: list[Zone] = get_next_zones(zones, current_cell)
 
-    msg_text = (f"<b>{electricity_status_text}</b> \n"
-                f"{time_av} \n")
+    msg_text = f"<b>{electricity_status_text}</b> \n{time_av} \n"
 
     use_schedules = to_int_or_none(await r.get("enable_schedule"))
 
     if use_schedules:
-        msg_text += (f"---------------------\n"
-                     f"Зараз {zone_to_string(zones[current_cell])[0]} \n"
-                     f"---------------------\n")
+        msg_text += (
+            f"---------------------\n"
+            f"Зараз {zone_to_string(zones[current_cell])[0]} \n"
+            f"---------------------\n"
+        )
 
         for zone in zone_list:
-            msg_text += (f"До {zone.zone_name[1]} о {zone.time}: \n"
-                         f"{zone.time_left} \n")
+            msg_text += f"До {zone.zone_name[1]} о {zone.time}: \n{zone.time_left} \n"
         msg_text += "---------------------\n"
     else:
         msg_text += "\n"
 
-    msg_text += (f"📡 Дані з ДТЕКу: \n"
-                 f"<i>{sub_type}</i> \n"
-                 f"Оновлено о: {dtek_last_update} ")
+    msg_text += (
+        f"📡 Дані з ДТЕКу: \n<i>{sub_type}</i> \nОновлено о: {dtek_last_update} "
+    )
 
     if start_date != "":
-        msg_text += ("\n"
-                     f"Вимкнення о {start_date}")
+        msg_text += f"\nВимкнення о {start_date}"
     if end_date != "":
-        msg_text += ("\n\n"
-                     f"<b>Відновлення о {end_date}</b>")
+        msg_text += f"\n\n<b>Відновлення о {end_date}</b>"
 
-    msg_text += "\n\n" + text_ranges + (" \n"
-                                        f"🗓 Актуальність графіку: \n{last_update_str} ")
+    msg_text += (
+        "\n\n" + text_ranges + (f" \n🗓 Актуальність графіку: \n{last_update_str} ")
+    )
 
-    msg_text += ("\n\n"
-                 f"<a href='{DONATE_LINK}'>До чаю</a>")
+    msg_text += f"\n\n<a href='{DONATE_LINK}'>До чаю</a>"
 
-    prev_msg_text: str = await r.get('prev_msg_text')
+    prev_msg_text: str = await r.get("prev_msg_text")
     if (prev_msg_text is None) or (msg_text == prev_msg_text):
         logger.debug("same or none, skipped...")
     else:
         await b.edit_message_text(msg_text, chat_id=MY_ID, message_id=msg_to_edit)
-    await r.set('prev_msg_text', msg_text)
+    await r.set("prev_msg_text", msg_text)
 
 
 async def set_start_values():
@@ -311,13 +327,13 @@ async def set_start_values():
         await r.set("send_request", 0)
 
 
-
 async def write_dtek_timetable_to_redis(red: Redis):
     ranges_today, ranges_tomorrow, last_update_str = await get_dtek_timetable()
 
     await red.set("ranges_today", json.dumps(ranges_today))
     await red.set("ranges_tomorrow", json.dumps(ranges_tomorrow))
     await red.set("last_update_str", last_update_str)
+
 
 async def main():
     job_lock = asyncio.Lock()
@@ -331,9 +347,19 @@ async def main():
     await dtek_checker(r)
     await write_dtek_timetable_to_redis(r)
     await msg_editor(bot, job_lock)
-    scheduler.add_job(check_electricity_change, 'interval', seconds=1, id='checker', args=(job_lock,))
-    scheduler.add_job(dtek_checker, 'interval', seconds=DTEK_UPDATE_INTERVAL, jitter=20, args=(r,))
-    scheduler.add_job(msg_editor, 'interval', seconds=MSG_UPDATE_INTERVAL, args=(bot, job_lock), id='editor')
+    scheduler.add_job(
+        check_electricity_change, "interval", seconds=1, id="checker", args=(job_lock,)
+    )
+    scheduler.add_job(
+        dtek_checker, "interval", seconds=DTEK_UPDATE_INTERVAL, jitter=20, args=(r,)
+    )
+    scheduler.add_job(
+        msg_editor,
+        "interval",
+        seconds=MSG_UPDATE_INTERVAL,
+        args=(bot, job_lock),
+        id="editor",
+    )
     scheduler.add_job(write_dtek_timetable_to_redis, 'interval', seconds=DTEK_UPDATE_INTERVAL, jitter=20, args=(r,))
     scheduler.start()
 
