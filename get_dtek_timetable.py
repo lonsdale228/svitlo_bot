@@ -43,7 +43,7 @@ def convert_dtek_dict_to_time_ranges(dtek_dict: dict) -> list[str]:
         return min(h, 24)
 
     def add_no_interval(start_h, end_h):
-        # корректировка конца дня
+        # Fix: если начинается с 24, значит это 23–24
         if start_h >= 24:
             start_h = 23
         if end_h > 24:
@@ -54,38 +54,31 @@ def convert_dtek_dict_to_time_ranges(dtek_dict: dict) -> list[str]:
         hour = int(hour_str)
         next_hour = clamp(hour + 1)
 
-        # ==========================
-        # CASE 1 — FULL NO
-        # ==========================
+        # -------- NO --------
         if status == "no":
             if not previous_hour_was_no:
                 current_no_start = hour
             previous_hour_was_no = True
             continue
 
-        # если здесь — значит статус уже НЕ NO
+        # -------- Close NO before processing FIRST/SECOND --------
         if previous_hour_was_no:
-            # закрываем интервал no
             add_no_interval(current_no_start, hour)
             previous_hour_was_no = False
 
-        # ==========================
-        # CASE 2 — FIRST (00–30)
-        # ==========================
+        # -------- FIRST --------
         if status == "first":
             result.append(f"з {hour:02d}:00 по {hour:02d}:30")
 
-        # ==========================
-        # CASE 3 — SECOND (30–00 next)
-        # ==========================
+        # -------- SECOND --------
         elif status == "second":
             result.append(f"з {hour:02d}:30 по {next_hour:02d}:00")
 
-        # yes → пропускаем
+        # yes → skip
 
-    # финальный хвост no
+    # -------- tail NO block (FIXED: NO +1 hour removed) --------
     if previous_hour_was_no:
-        add_no_interval(current_no_start, clamp(hour + 1))
+        add_no_interval(current_no_start, hour)   # <- раньше был hour+1
 
     return result
 
