@@ -221,10 +221,10 @@ async def msg_editor(b: Bot, lock):
 
     text_ranges = (("Графік на сьогодні: \n" +
                    "Світло буде відсутнє \n" +
-                   "\n ".join(ranges_today)) +
-                   "\n " +
+                   " \n".join(ranges_today)) +
+                   "\n\n " +
                    "<b>Графік на завтра:</b> \n" +
-                   "\n ".join(ranges_tomorrow))
+                   " \n".join(ranges_tomorrow))
 
     if status == 1:
         electricity_status_text += ("💡Світло є! \n"
