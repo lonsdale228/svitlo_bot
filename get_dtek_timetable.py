@@ -48,35 +48,44 @@ def convert_dtek_dict_to_time_ranges(dtek_dict: dict) -> list[str]:
             # Find end of consecutive "no" hours
             while i < len(hours) and dtek_dict[str(hours[i])] == "no":
                 i += 1
-            # end_h is the start of next hour after last "no"
-            end_h = hours[i - 1] + 1
 
-            if start_h == 23 and end_h == 24:
-                result.append(f"з {start_h:02d}:00 по 00:00")
+            # Check if next hour has "first" status - include it in interval
+            if i < len(hours) and dtek_dict[str(hours[i])] == "first":
+                end_h = hours[i]
+                if end_h == 23:
+                    result.append(f"з {start_h:02d}:00 по 00:00")
+                else:
+                    result.append(f"з {start_h:02d}:00 по {end_h:02d}:30")
+                i += 1  # Skip the "first" hour
             else:
-                result.append(f"з {start_h:02d}:00 по {end_h:02d}:00")
+                # Just "no" hours
+                end_h = hours[i - 1] + 1
+                if start_h == 23:
+                    result.append(f"з {start_h:02d}:00 по 00:00")
+                else:
+                    result.append(f"з {start_h:02d}:00 по {end_h:02d}:00")
 
         elif status == "first":
-            # Check if next consecutive hour is "second" - merge them
+            # Check if next hour is "second" - merge them
             if (
                 i + 1 < len(hours)
                 and hours[i + 1] == hour + 1
                 and dtek_dict[str(hour + 1)] == "second"
             ):
-                # Merged interval: hour:00 to (hour+1):00
-                end_h = hour + 1
+                # Full hour: hour:00 to (hour+1):00
                 if hour == 23:
                     result.append(f"з {hour:02d}:00 по 00:00")
                 else:
-                    result.append(f"з {hour:02d}:00 по {end_h:02d}:00")
-                i += 2  # Skip both hours
+                    result.append(f"з {hour:02d}:00 по {hour + 1:02d}:00")
+                i += 2
             else:
                 # Just first half: hour:00 to hour:30
                 result.append(f"з {hour:02d}:00 по {hour:02d}:30")
                 i += 1
 
         elif status == "second":
-            # Second half: hour:30 to (hour+1):00
+            # Check if previous interval ended with "no", if so merge
+            # (this case is already handled above, so just standalone second half)
             if hour == 23:
                 result.append(f"з {hour:02d}:00 по 00:00")
             else:
