@@ -220,12 +220,12 @@ async def msg_editor(b: Bot, lock):
     tz_info_on_time = on_time.tzinfo
 
     text_ranges = (("📅Графік на сьогодні: \n" +
-                   "Світло буде відсутнє \n" +
-                   " \n🕓".join(ranges_today)) +
+                   "Світло буде відсутнє \n🕓 " +
+                   " \n🕓 ".join(ranges_today)) +
                    " \n\n" +
                    "📅<b>Графік на завтра:</b> \n" +
-                   "Світло буде відсутнє \n" +
-                   " \n🕓".join(ranges_tomorrow))
+                   "Світло буде відсутнє \n🕓 " +
+                   " \n🕓 ".join(ranges_tomorrow))
 
     if status == 1:
         electricity_status_text += ("💡Світло є! \n"
