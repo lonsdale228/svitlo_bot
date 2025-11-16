@@ -40,38 +40,37 @@ def convert_dtek_dict_to_time_ranges(dtek_dict: dict) -> list[str]:
     previous_hour_was_no = False
 
     def clamp_hour(h: int) -> int:
-        # ограничиваем чтобы не было 24+ → 24
         return min(h, 24)
+
+    def fix_no_interval(start_h, end_h):
+        if start_h >= 24:
+            start_h = 23
+        if end_h > 24:
+            end_h = 24
+        return f"з {start_h:02d}:00 по {end_h:02d}:00"
 
     for hour_str, status in dtek_dict.items():
         hour = int(hour_str)
         next_hour = clamp_hour(hour + 1)
 
-        # -------- NO --------
         if status == "no":
             if not previous_hour_was_no:
                 current_no_start = hour
             previous_hour_was_no = True
             continue
 
-        # Закрываем последовательность NO перед обработкой other state
         if previous_hour_was_no:
-            end_hour = clamp_hour(hour)
-            result.append(f"з {current_no_start:02d}:00 по {end_hour:02d}:00")
+            result.append(fix_no_interval(current_no_start, hour))
             previous_hour_was_no = False
 
-        # -------- FIRST 00–30 --------
         if status == "first":
             result.append(f"з {hour:02d}:00 по {hour:02d}:30")
 
-        # -------- SECOND 30–00 next --------
         elif status == "second":
             result.append(f"з {hour:02d}:30 по {next_hour:02d}:00")
 
-    # Если NO в конце
     if previous_hour_was_no:
-        end_hour = clamp_hour(hour + 1)
-        result.append(f"з {current_no_start:02d}:00 по {end_hour:02d}:00")
+        result.append(fix_no_interval(current_no_start, clamp_hour(hour + 1)))
 
     return result
 
