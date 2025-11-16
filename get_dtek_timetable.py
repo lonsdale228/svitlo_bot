@@ -35,55 +35,53 @@ headers = {
 
 def convert_dtek_dict_to_time_ranges(dtek_dict: dict) -> list[str]:
     result = []
-
-    current_no_start = None
-    previous_hour_was_no = False
-
     hours = sorted(int(h) for h in dtek_dict.keys())
 
-    def add_no_interval(start_h, end_h):
-        # конец часа *не включительно*
-        if start_h < 0:
-            start_h = 0
-        if end_h > 24:
-            end_h = 24
-
-        # 23 → 00 next day
-        if end_h == 24:
-            result.append(f"з {start_h:02d}:00 по 00:00")
-        else:
-            result.append(f"з {start_h:02d}:00 по {end_h:02d}:00")
-
-    for hour in hours:
+    i = 0
+    while i < len(hours):
+        hour = hours[i]
         status = dtek_dict[str(hour)]
 
-        # CASE NO
         if status == "no":
-            if not previous_hour_was_no:
-                current_no_start = hour
-            previous_hour_was_no = True
-            continue
+            # Start of "no" interval
+            start_h = hour
+            # Find end of consecutive "no" hours
+            while i < len(hours) and dtek_dict[str(hours[i])] == "no":
+                i += 1
+            # end_h is the hour where "no" ends (the next hour after last "no")
+            end_h = hours[i - 1] + 1
 
-        # if current hour NOT NO — close previous
-        if previous_hour_was_no:
-            add_no_interval(current_no_start, hour)
-            previous_hour_was_no = False
-
-        # CASE FIRST
-        if status == "first":
-            result.append(f"з {hour:02d}:00 по {hour:02d}:30")
-
-        # CASE SECOND
-        elif status == "second":
-            next_h = hour + 1
-            if next_h == 24:
-                result.append("з 23:30 по 00:00")
+            if end_h == 24:
+                result.append(f"з {start_h:02d}:00 по 00:00")
             else:
-                result.append(f"з {hour:02d}:30 по {next_h:02d}:00")
+                result.append(f"з {start_h:02d}:00 по {end_h:02d}:00")
 
-    # tail NO
-    if previous_hour_was_no:
-        add_no_interval(current_no_start, hours[-1] + 1)
+        elif status == "first":
+            # Check if next hour is "second" - if so, merge them
+            if (
+                i + 1 < len(hours)
+                and hours[i + 1] == hour + 1
+                and dtek_dict[str(hour + 1)] == "second"
+            ):
+                # Full hour outage (first half of hour + second half of hour+1)
+                end_h = hour + 1
+                if end_h == 24:
+                    result.append(f"з {hour:02d}:00 по 00:00")
+                else:
+                    result.append(f"з {hour:02d}:00 по {end_h:02d}:00")
+                i += 2  # Skip both hours
+            else:
+                # Just first half
+                result.append(f"з {hour:02d}:00 по {hour:02d}:30")
+                i += 1
+
+        elif status == "second":
+            # Just second half
+            result.append(f"з {hour:02d}:30 по {hour + 1:02d}:00")
+            i += 1
+
+        else:
+            i += 1
 
     return result
 
