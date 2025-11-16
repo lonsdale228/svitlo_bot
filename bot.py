@@ -224,6 +224,7 @@ async def msg_editor(b: Bot, lock):
                    " \n".join(ranges_today)) +
                    " \n\n" +
                    "<b>Графік на завтра:</b> \n" +
+                   "Світло буде відсутнє \n" +
                    " \n".join(ranges_tomorrow))
 
     if status == 1:
