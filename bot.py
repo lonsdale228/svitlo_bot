@@ -219,26 +219,26 @@ async def msg_editor(b: Bot, lock):
     tz_info_off_time = off_time.tzinfo
     tz_info_on_time = on_time.tzinfo
 
-    text_ranges = (("Графік на сьогодні: \n" +
+    text_ranges = (("📅Графік на сьогодні: \n" +
                    "Світло буде відсутнє \n" +
-                   " \n".join(ranges_today)) +
+                   " \n🕓".join(ranges_today)) +
                    " \n\n" +
-                   "<b>Графік на завтра:</b> \n" +
+                   "📅<b>Графік на завтра:</b> \n" +
                    "Світло буде відсутнє \n" +
-                   " \n".join(ranges_tomorrow))
+                   " \n🕓".join(ranges_tomorrow))
 
     if status == 1:
         electricity_status_text += ("💡Світло є! \n"
-                                    "Совіньйон 1, Ольгіївська")
+                                    "📍Совіньйон 1, Ольгіївська")
         time_av = (f"Світло присутнє протягом: \n"
                    f"{time_format((now.replace(tzinfo=tz_info_on_time) - on_time).total_seconds())} \n"
-                   f"Увімкнено о {on_time.strftime('%H:%M:%S %d.%m')}")
+                   f"🟢 Увімкнено о {on_time.strftime('%H:%M:%S (%d.%m)')}")
     else:
         electricity_status_text += ("⚫️Світла немає! \n"
                                     "Совіньйон 1, Ольгіївська")
         time_av = (f"Світло відсутнє протягом: \n"
                    f"{time_format((now.replace(tzinfo=tz_info_off_time) - off_time).total_seconds())} \n"
-                   f"Вимкнено о {off_time.strftime('%H:%M:%S %d.%m')}")
+                   f"⚫️ Вимкнено о {off_time.strftime('%H:%M:%S (%d.%m)')}")
 
     if sub_type == "":
         sub_type = "Наразі відключень НЕМАЄ"
@@ -266,7 +266,7 @@ async def msg_editor(b: Bot, lock):
     else:
         msg_text += "\n"
 
-    msg_text += (f"Останні дані з ДТЕКу: \n"
+    msg_text += (f"📡 Дані з ДТЕКу: \n"
                  f"<i>{sub_type}</i> \n"
                  f"Оновлено о: {dtek_last_update} ")
 
@@ -278,7 +278,7 @@ async def msg_editor(b: Bot, lock):
                      f"<b>Відновлення о {end_date}</b>")
 
     msg_text += "\n\n" + text_ranges + (" \n"
-                                        f"Актуальність графіків: \n{last_update_str} ")
+                                        f"🗓 Актуальність графіку: \n{last_update_str} ")
 
     msg_text += ("\n\n"
                  f"<a href='{DONATE_LINK}'>До чаю</a>")
