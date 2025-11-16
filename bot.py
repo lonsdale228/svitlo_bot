@@ -291,7 +291,7 @@ async def msg_editor(b: Bot, lock):
         msg_text += f"\n\n<b>Відновлення о {end_date}</b>"
 
     msg_text += (
-        "\n\n" + text_ranges + (f" \n🗓 Актуальність графіку: \n{last_update_str} ")
+        "\n\n" + text_ranges + (f" \n\n🗓 Актуальність графіку: \n{last_update_str} ")
     )
 
     msg_text += f"\n\n<a href='{DONATE_LINK}'>До чаю</a>"
