@@ -222,7 +222,7 @@ async def msg_editor(b: Bot, lock):
     text_ranges = (("Графік на сьогодні: \n" +
                    "Світло буде відсутнє \n" +
                    " \n".join(ranges_today)) +
-                   "\n\n " +
+                   " \n\n" +
                    "<b>Графік на завтра:</b> \n" +
                    " \n".join(ranges_tomorrow))
 
