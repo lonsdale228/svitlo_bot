@@ -48,36 +48,39 @@ def convert_dtek_dict_to_time_ranges(dtek_dict: dict) -> list[str]:
             # Find end of consecutive "no" hours
             while i < len(hours) and dtek_dict[str(hours[i])] == "no":
                 i += 1
-            # end_h is the hour where "no" ends (the next hour after last "no")
+            # end_h is the start of next hour after last "no"
             end_h = hours[i - 1] + 1
 
-            if end_h == 24:
+            if start_h == 23 and end_h == 24:
                 result.append(f"з {start_h:02d}:00 по 00:00")
             else:
                 result.append(f"з {start_h:02d}:00 по {end_h:02d}:00")
 
         elif status == "first":
-            # Check if next hour is "second" - if so, merge them
+            # Check if next consecutive hour is "second" - merge them
             if (
                 i + 1 < len(hours)
                 and hours[i + 1] == hour + 1
                 and dtek_dict[str(hour + 1)] == "second"
             ):
-                # Full hour outage (first half of hour + second half of hour+1)
+                # Merged interval: hour:00 to (hour+1):00
                 end_h = hour + 1
-                if end_h == 24:
+                if hour == 23:
                     result.append(f"з {hour:02d}:00 по 00:00")
                 else:
                     result.append(f"з {hour:02d}:00 по {end_h:02d}:00")
                 i += 2  # Skip both hours
             else:
-                # Just first half
+                # Just first half: hour:00 to hour:30
                 result.append(f"з {hour:02d}:00 по {hour:02d}:30")
                 i += 1
 
         elif status == "second":
-            # Just second half
-            result.append(f"з {hour:02d}:30 по {hour + 1:02d}:00")
+            # Second half: hour:30 to (hour+1):00
+            if hour == 23:
+                result.append(f"з {hour:02d}:00 по 00:00")
+            else:
+                result.append(f"з {hour:02d}:30 по {hour + 1:02d}:00")
             i += 1
 
         else:
