@@ -8,6 +8,7 @@ from aiogram import Bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from redis import Redis
 
+from get_dtek_timetable import get_dtek_timetable
 from loader import bot, dp, logger, dtek_timetable_bot
 from models import Zone
 from redis_loader import r
@@ -204,7 +205,12 @@ async def msg_editor(b: Bot, lock):
     now = time_with_tz()
     status = to_int_or_none(status)
     end_date = await r.get('end_date')
-    start_date = await r.get('start_date')
+    start_date = await r.get("start_date")
+    ranges_today = await r.get('ranges_today')
+    ranges_today = json.loads(ranges_today)
+    ranges_tomorrow = await r.get('ranges_tomorrow')
+    ranges_tomorrow = json.loads(ranges_tomorrow)
+    last_update_str = await r.get('last_update_str')
     electricity_status_text = ""
 
     off_time = datetime.datetime.fromtimestamp(float(await r.get("off_time")))
@@ -212,6 +218,13 @@ async def msg_editor(b: Bot, lock):
 
     tz_info_off_time = off_time.tzinfo
     tz_info_on_time = on_time.tzinfo
+
+    text_ranges = (("Графік на сьогодні: \n"
+                   "Світло буде відсутнє \n"
+                   "\n ".join(ranges_today)) +
+                   "\n "
+                   "<b>Графік на завтра:</b> \n"
+                   "\n ".join(ranges_tomorrow))
 
     if status == 1:
         electricity_status_text += ("💡Світло є! \n"
@@ -263,6 +276,9 @@ async def msg_editor(b: Bot, lock):
         msg_text += ("\n\n"
                      f"<b>Відновлення о {end_date}</b>")
 
+    msg_text += "\n\n" + text_ranges + (" \n"
+                                        f"Актуальність графіків: \n{last_update_str} ")
+
     msg_text += ("\n\n"
                  f"<a href='{DONATE_LINK}'>До чаю</a>")
 
@@ -295,6 +311,13 @@ async def set_start_values():
 
 
 
+async def write_dtek_timetable_to_redis(red: Redis):
+    ranges_today, ranges_tomorrow, last_update_str = await get_dtek_timetable()
+
+    await red.set("ranges_today", json.dumps(ranges_today))
+    await red.set("ranges_tomorrow", json.dumps(ranges_tomorrow))
+    await red.set("last_update_str", last_update_str)
+
 async def main():
     job_lock = asyncio.Lock()
     await bot.delete_webhook()
@@ -305,10 +328,12 @@ async def main():
     scheduler = AsyncIOScheduler()
 
     await dtek_checker(r)
+    await write_dtek_timetable_to_redis(r)
     await msg_editor(bot, job_lock)
     scheduler.add_job(check_electricity_change, 'interval', seconds=1, id='checker', args=(job_lock,))
     scheduler.add_job(dtek_checker, 'interval', seconds=DTEK_UPDATE_INTERVAL, jitter=20, args=(r,))
     scheduler.add_job(msg_editor, 'interval', seconds=MSG_UPDATE_INTERVAL, args=(bot, job_lock), id='editor')
+    scheduler.add_job(write_dtek_timetable_to_redis, 'interval', seconds=DTEK_UPDATE_INTERVAL, jitter=20, args=(r,))
     scheduler.start()
 
     await dtek_timetable_bot.start()
