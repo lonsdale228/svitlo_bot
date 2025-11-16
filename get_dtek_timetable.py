@@ -39,46 +39,51 @@ def convert_dtek_dict_to_time_ranges(dtek_dict: dict) -> list[str]:
     current_no_start = None
     previous_hour_was_no = False
 
-    def clamp(h):
-        return min(h, 24)
+    hours = sorted(int(h) for h in dtek_dict.keys())
 
     def add_no_interval(start_h, end_h):
-        # Fix: если начинается с 24, значит это 23–24
-        if start_h >= 24:
-            start_h = 23
+        # конец часа *не включительно*
+        if start_h < 0:
+            start_h = 0
         if end_h > 24:
             end_h = 24
-        result.append(f"з {start_h:02d}:00 по {end_h:02d}:00")
 
-    for hour_str, status in dtek_dict.items():
-        hour = int(hour_str)
-        next_hour = clamp(hour + 1)
+        # 23 → 00 next day
+        if end_h == 24:
+            result.append(f"з {start_h:02d}:00 по 00:00")
+        else:
+            result.append(f"з {start_h:02d}:00 по {end_h:02d}:00")
 
-        # -------- NO --------
+    for hour in hours:
+        status = dtek_dict[str(hour)]
+
+        # CASE NO
         if status == "no":
             if not previous_hour_was_no:
                 current_no_start = hour
             previous_hour_was_no = True
             continue
 
-        # -------- Close NO before processing FIRST/SECOND --------
+        # if current hour NOT NO — close previous
         if previous_hour_was_no:
             add_no_interval(current_no_start, hour)
             previous_hour_was_no = False
 
-        # -------- FIRST --------
+        # CASE FIRST
         if status == "first":
             result.append(f"з {hour:02d}:00 по {hour:02d}:30")
 
-        # -------- SECOND --------
+        # CASE SECOND
         elif status == "second":
-            result.append(f"з {hour:02d}:30 по {next_hour:02d}:00")
+            next_h = hour + 1
+            if next_h == 24:
+                result.append("з 23:30 по 00:00")
+            else:
+                result.append(f"з {hour:02d}:30 по {next_h:02d}:00")
 
-        # yes → skip
-
-    # -------- tail NO block (FIXED: NO +1 hour removed) --------
+    # tail NO
     if previous_hour_was_no:
-        add_no_interval(current_no_start, hour)   # <- раньше был hour+1
+        add_no_interval(current_no_start, hours[-1] + 1)
 
     return result
 
