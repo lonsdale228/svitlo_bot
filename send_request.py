@@ -14,6 +14,7 @@ async def send_on_request():
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(url_on) as response:
+                logger.info("Send ON Request")
                 if response.status != 200:
                     await asyncio.sleep(SLEEP_TIME)
                     await send_on_request()
@@ -25,6 +26,7 @@ async def send_off_request():
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(url_off) as response:
+                logger.info("Send OFF Request")
                 if response.status != 200:
                     await asyncio.sleep(SLEEP_TIME)
                     await send_off_request()
