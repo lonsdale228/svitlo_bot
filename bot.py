@@ -224,17 +224,20 @@ async def msg_editor(b: Bot, lock):
     prev_value = await r.get("prev_timetable")
     prev_timetable = int(prev_value) if prev_value else 0
 
-    logger.info(f"{prev_timetable} {ranges_tomorrow}")
-    if not prev_timetable and ranges_tomorrow:
-        logger.info("Sent timetable change!")
-        await b.send_message(chat_id=MY_ID, text="Додано графіки на завтра!")
-        await r.set("prev_timetable", 1)
-
     tomorrow = (
         ("Світло буде відсутнє \n🕓 " + " \n🕓 ".join(ranges_tomorrow))
         if ranges_tomorrow
         else "Відсутній"
     )
+
+    logger.info(f"{prev_timetable} {ranges_tomorrow}")
+    if not prev_timetable and ranges_tomorrow:
+        logger.info("Sent timetable change!")
+        text = "Додано графіки на завтра! \n\n" + "📅<b>Графік на завтра:</b> \n" + tomorrow
+
+        await b.send_message(chat_id=MY_ID, text=text)
+        await r.set("prev_timetable", 1)
+
     text_ranges = (
         (
             "📅Графік на сьогодні: \n"
