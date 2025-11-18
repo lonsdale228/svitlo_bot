@@ -221,7 +221,9 @@ async def msg_editor(b: Bot, lock):
     tz_info_off_time = off_time.tzinfo
     tz_info_on_time = on_time.tzinfo
 
-    prev_timetable = bool(await r.get("prev_timetable"))
+    prev_value = await r.get("prev_timetable")
+    prev_timetable = int(prev_value) if prev_value else 0
+
     logger.info(f"{prev_timetable} {ranges_tomorrow}")
     if not prev_timetable and ranges_tomorrow:
         logger.info("Sent timetable change!")
