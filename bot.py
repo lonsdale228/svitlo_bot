@@ -250,6 +250,7 @@ async def msg_editor(b: Bot, lock):
             + "📅<b>Графік на завтра:</b> \n"
             + tomorrow
         )
+        text += f"\n\n<a href='{DONATE_LINK}'>До чаю</a>"
 
         await b.send_message(chat_id=MY_ID, text=text)
         await r.set("prev_timetable", 1)
