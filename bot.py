@@ -269,10 +269,10 @@ async def msg_editor(b: Bot, lock):
     if not ranges_tomorrow:
         await r.set("prev_timetable", 0)
 
-    await r.set(
-        "tomorrow_prev_timetable_text", ranges_tomorrow if ranges_tomorrow else ""
-    )
-    await r.set("today_prev_timetable_text", tomorrow if ranges_today else "")
+    # await r.set(
+    #     "tomorrow_prev_timetable_text", ranges_tomorrow if ranges_tomorrow else ""
+    # )
+    # await r.set("today_prev_timetable_text", tomorrow if ranges_today else "")
 
     if status == 1:
         electricity_status_text += "💡Світло є! \n📍Совіньйон 1, Ольгіївська"
