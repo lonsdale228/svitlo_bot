@@ -224,6 +224,18 @@ async def msg_editor(b: Bot, lock):
     prev_value = await r.get("prev_timetable")
     prev_timetable = int(prev_value) if prev_value else 0
 
+    # tomorrow_prev_timetable_text = r.get("tomorrow_prev_timetable_text")
+    # today_prev_timetable_text = r.get("today_prev_timetable_text")
+    #
+    # if (ranges_today != today_prev_timetable_text) and (not ranges_tomorrow) and ():
+    #     await b.send_message(
+    #         text="Змінився графік на сьогодні! \n"
+    #         "📅Графік на сьогодні: \n"
+    #         + "Світло буде відсутнє \n🕓 "
+    #         + " \n🕓 ".join(ranges_today),
+    #         chat_id=MY_ID,
+    #     )
+
     tomorrow = (
         ("Світло буде відсутнє \n🕓 " + " \n🕓 ".join(ranges_tomorrow))
         if ranges_tomorrow
@@ -233,7 +245,11 @@ async def msg_editor(b: Bot, lock):
     logger.info(f"{prev_timetable} {ranges_tomorrow}")
     if not prev_timetable and ranges_tomorrow:
         logger.info("Sent timetable change!")
-        text = "Додано графіки на завтра! \n\n" + "📅<b>Графік на завтра:</b> \n" + tomorrow
+        text = (
+            "Додано графіки на завтра! \n\n"
+            + "📅<b>Графік на завтра:</b> \n"
+            + tomorrow
+        )
 
         await b.send_message(chat_id=MY_ID, text=text)
         await r.set("prev_timetable", 1)
@@ -251,6 +267,11 @@ async def msg_editor(b: Bot, lock):
 
     if not ranges_tomorrow:
         await r.set("prev_timetable", 0)
+
+    await r.set(
+        "tomorrow_prev_timetable_text", ranges_tomorrow if ranges_tomorrow else ""
+    )
+    await r.set("today_prev_timetable_text", tomorrow if ranges_today else "")
 
     if status == 1:
         electricity_status_text += "💡Світло є! \n📍Совіньйон 1, Ольгіївська"
