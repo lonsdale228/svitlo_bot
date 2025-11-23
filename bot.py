@@ -5,6 +5,7 @@ import os
 
 import aiohttp
 from aiogram import Bot
+from aiogram.types import FSInputFile, InputMediaPhoto
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from redis import Redis
 
@@ -99,10 +100,20 @@ async def send_change_msg(is_on: int):
         )
         prev_msg_text += f"\n\n<a href='{DONATE_LINK}'>До чаю</a>"
 
-    msg = await bot.send_message(MY_ID, msg_text, disable_notification=False)
+    # msg = await bot.send_message(MY_ID, msg_text, disable_notification=False)
 
-    await bot.edit_message_text(
-        text=prev_msg_text, chat_id=MY_ID, message_id=prev_msg_id
+    photo = FSInputFile(path="js_render/gpv42_schedule_combined.png")
+
+    msg = await bot.send_photo(chat_id=MY_ID, caption=prev_msg_text, photo=photo)
+
+    await asyncio.sleep(2)
+
+    # await bot.edit_message_text(
+    #     text=prev_msg_text, chat_id=MY_ID, message_id=prev_msg_id
+    # )
+
+    await bot.edit_message_caption(
+        caption=prev_msg_text, chat_id=MY_ID, message_id=prev_msg_id
     )
 
     await r.set("prev_msg_id", prev_msg_id)
@@ -252,7 +263,9 @@ async def msg_editor(b: Bot, lock):
         )
         text += f"\n\n<a href='{DONATE_LINK}'>До чаю</a>"
 
-        await b.send_message(chat_id=MY_ID, text=text)
+        photo = FSInputFile(path="js_render/gpv42_schedule_combined.png")
+        await bot.send_photo(chat_id=MY_ID, caption=text, photo=photo)
+        # await b.send_message(chat_id=MY_ID, text=text)
         await r.set("prev_timetable", 1)
 
     text_ranges = (
@@ -334,7 +347,10 @@ async def msg_editor(b: Bot, lock):
     if (prev_msg_text is None) or (msg_text == prev_msg_text):
         logger.debug("same or none, skipped...")
     else:
-        await b.edit_message_text(msg_text, chat_id=MY_ID, message_id=msg_to_edit)
+        photo = FSInputFile("js_render/gpv42_schedule_combined.png")
+        await b.edit_message_media(media=InputMediaPhoto(media=photo))
+        await b.edit_message_caption(caption=msg_text, chat_id=MY_ID, message_id=msg_to_edit)
+        # await b.edit_message_text(msg_text, chat_id=MY_ID, message_id=msg_to_edit)
     await r.set("prev_msg_text", msg_text)
 
 

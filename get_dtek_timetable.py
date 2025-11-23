@@ -133,6 +133,25 @@ async def get_dtek_timetable() -> tuple[list[str], list[str], str]:
             last_update_time: str = data["update"]
             return converted_ranges_today, converted_ranges_tomorrow, last_update_time
 
+async def get_raw_dtek_timetable() -> dict:
+    async with aiohttp.ClientSession(headers=headers) as session:
+        async with session.get(dtek_url, headers=headers) as response:
+            html = await response.text()
+
+            if "ROBOT" in html:
+                await asyncio.sleep(2)
+                await get_dtek_timetable()
+                return
+
+            pattern = r"DisconSchedule\.fact\s*=\s*({.*})"
+            match = re.search(pattern, html, flags=re.S)
+            if not match:
+                raise ValueError("JSON not found inside last <script>")
+
+            json_text = match.group(1)
+            data = json.loads(json_text)
+
+            return data
 
 if __name__ == "__main__":
     asyncio.run(get_dtek_timetable())
