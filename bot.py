@@ -254,8 +254,8 @@ async def msg_editor(b: Bot, lock):
         )
         text += f"\n\n<a href='{DONATE_LINK}'>До чаю</a>"
 
-        photo = FSInputFile(path="js_render/gpv42_schedule_combined.png")
-        await bot.send_photo(chat_id=MY_ID, caption=text, photo=photo)
+        # photo = FSInputFile(path="js_render/gpv42_schedule_combined.png")
+        # await bot.send_photo(chat_id=MY_ID, caption=text, photo=photo)
         # await b.send_message(chat_id=MY_ID, text=text)
         await r.set("prev_timetable", 1)
 
@@ -338,10 +338,10 @@ async def msg_editor(b: Bot, lock):
     if (prev_msg_text is None) or (msg_text == prev_msg_text):
         logger.debug("same or none, skipped...")
     else:
-        photo = FSInputFile("js_render/gpv42_schedule_combined.png")
-        await b.edit_message_media(media=InputMediaPhoto(media=photo))
-        await b.edit_message_caption(caption=msg_text, chat_id=MY_ID, message_id=msg_to_edit)
-        # await b.edit_message_text(msg_text, chat_id=MY_ID, message_id=msg_to_edit)
+        # photo = FSInputFile("js_render/gpv42_schedule_combined.png")
+        # await b.edit_message_media(media=InputMediaPhoto(media=photo))
+        # await b.edit_message_caption(caption=msg_text, chat_id=MY_ID, message_id=msg_to_edit)
+        await b.edit_message_text(msg_text, chat_id=MY_ID, message_id=msg_to_edit)
     await r.set("prev_msg_text", msg_text)
 
 
