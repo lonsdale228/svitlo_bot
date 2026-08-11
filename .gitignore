@@ -24,6 +24,13 @@
 .idea/**/uiDesigner.xml
 .idea/**/dbnavigator.xml
 
+__pycache__/
+dtek_timetable_bot.session
+dtek_timetable_bot.session-journal
+handlers/__pycache__/
+ocr/__pycache__/
+plugins/__pycache__/
+redis-data.tar.gz
 # Gradle
 .idea/**/gradle.xml
 .idea/**/libraries

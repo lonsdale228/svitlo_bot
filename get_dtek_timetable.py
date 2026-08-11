@@ -119,12 +119,19 @@ async def get_dtek_timetable() -> tuple[list[str], list[str], str]:
             data = json.loads(json_text)
 
             now = datetime.datetime.now(tz=ZoneInfo("Europe/Kyiv"))
+            if data is None:
+                return [], [], ''
+            if not data["data"]:
+                last_update_time: str = data["update"]
+                return [], [], last_update_time
             for key, val in data["data"].items():
                 dtek_time = datetime.datetime.fromtimestamp(
                     int(key), tz=ZoneInfo("Europe/Kyiv")
                 )
                 if dtek_time.date() == now.date():
-                    converted_ranges_today = convert_dtek_dict_to_time_ranges(val["GPV4.2"])
+                    converted_ranges_today = convert_dtek_dict_to_time_ranges(
+                        val["GPV4.2"]
+                    )
                 else:
                     converted_ranges_tomorrow = convert_dtek_dict_to_time_ranges(
                         val["GPV4.2"]

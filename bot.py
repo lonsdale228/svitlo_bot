@@ -16,12 +16,13 @@ from send_request import send_on_request, send_off_request
 from utils import time_format, get_next_zones, time_with_tz, zone_to_string
 from timetables import zones
 
+
 MY_ID = os.getenv("CHANNEL_ID")
 DTEK_UPDATE_INTERVAL = 90
 MSG_UPDATE_INTERVAL = 10
 REGION_NAME = "с. Лиманка"
-STREET_NAME = "вул. Затишна"
-HOUSE_NUM = "10"
+STREET_NAME = "вул. Центральна"
+HOUSE_NUM = "7/1"
 DONATE_LINK = os.getenv("DONATE_LINK")
 
 
@@ -75,7 +76,7 @@ async def send_change_msg(is_on: int):
     if is_on == 1:
         # send post
         asyncio.create_task(send_on_request())
-        msg_text += "💡Світло з'явилося!"
+        msg_text += "Світло з'явилося!"
         await r.set("on_time", str(now.timestamp()))
 
         prev_msg_text = (
@@ -89,7 +90,7 @@ async def send_change_msg(is_on: int):
     else:
         # send post
         asyncio.create_task(send_off_request())
-        msg_text += "⚫️Світло зникло!"
+        msg_text += "Світло зникло!"
         await r.set("off_time", str(now.timestamp()))
         prev_msg_text = (
             f"<i>Світло було: \n"
@@ -136,8 +137,8 @@ async def dtek_checker(redis: Redis):
 
     url = "https://www.dtek-oem.com.ua/ua/ajax"
     REGION_NAME = "с. Лиманка"
-    STREET_NAME = "вул. Затишна"
-    HOUSE_NUM = "10"
+    STREET_NAME = "вул. Центральна"
+    HOUSE_NUM = "7/1"
     headers = {
         "Accept": "application/json, text/javascript, */*; q=0.01",
         "Accept-Encoding": "gzip, deflate, br, zstd",
@@ -230,14 +231,14 @@ async def msg_editor(b: Bot, lock):
     # if (ranges_today != today_prev_timetable_text) and (not ranges_tomorrow) and ():
     #     await b.send_message(
     #         text="Змінився графік на сьогодні! \n"
-    #         "📅Графік на сьогодні: \n"
-    #         + "Світло буде відсутнє \n🕓 "
-    #         + " \n🕓 ".join(ranges_today),
+    #         "Графік на сьогодні: \n"
+    #         + "Світло буде відсутнє \n "
+    #         + " \n ".join(ranges_today),
     #         chat_id=MY_ID,
     #     )
 
     tomorrow = (
-        ("Світло буде відсутнє \n🕓 " + " \n🕓 ".join(ranges_tomorrow))
+        ("Світло буде відсутнє \n " + " \n ".join(ranges_tomorrow))
         if ranges_tomorrow
         else "Відсутній"
     )
@@ -247,7 +248,7 @@ async def msg_editor(b: Bot, lock):
         logger.info("Sent timetable change!")
         text = (
             "Додано графіки на завтра! \n\n"
-            + "📅<b>Графік на завтра:</b> \n"
+            + "<b>Графік на завтра:</b> \n"
             + tomorrow
         )
         text += f"\n\n<a href='{DONATE_LINK}'>До чаю</a>"
@@ -255,16 +256,18 @@ async def msg_editor(b: Bot, lock):
         await b.send_message(chat_id=MY_ID, text=text)
         await r.set("prev_timetable", 1)
 
-    text_ranges = (
-        (
-            "📅Графік на сьогодні: \n"
-            + "Світло буде відсутнє \n🕓 "
-            + " \n🕓 ".join(ranges_today)
+    text_ranges = ""
+    if ranges_today:
+        text_ranges = (
+            (
+                "Графік на сьогодні: \n"
+                + "Світло буде відсутнє \n "
+                + " \n ".join(ranges_today)
+            )
+            + " \n\n"
+            + "<b>Графік на завтра:</b> \n"
+            + tomorrow
         )
-        + " \n\n"
-        + "📅<b>Графік на завтра:</b> \n"
-        + tomorrow
-    )
 
     if not ranges_tomorrow:
         await r.set("prev_timetable", 0)
@@ -275,18 +278,18 @@ async def msg_editor(b: Bot, lock):
     # await r.set("today_prev_timetable_text", tomorrow if ranges_today else "")
 
     if status == 1:
-        electricity_status_text += "💡Світло є! \n📍Совіньйон 1, Ольгіївська"
+        electricity_status_text += "Світло є! \nСовіньйон 1, Ольгіївська"
         time_av = (
             f"Світло присутнє протягом: \n"
             f"{time_format((now.replace(tzinfo=tz_info_on_time) - on_time).total_seconds())} \n"
-            f"🟢 Увімкнено о {on_time.strftime('%H:%M:%S (%d.%m)')}"
+            f" Увімкнено о {on_time.strftime('%H:%M:%S (%d.%m)')}"
         )
     else:
-        electricity_status_text += "⚫️Світла немає! \nСовіньйон 1, Ольгіївська"
+        electricity_status_text += "Світла немає! \nСовіньйон 1, Ольгіївська"
         time_av = (
             f"Світло відсутнє протягом: \n"
             f"{time_format((now.replace(tzinfo=tz_info_off_time) - off_time).total_seconds())} \n"
-            f"⚫️ Вимкнено о {off_time.strftime('%H:%M:%S (%d.%m)')}"
+            f" Вимкнено о {off_time.strftime('%H:%M:%S (%d.%m)')}"
         )
 
     if sub_type == "":
@@ -316,7 +319,7 @@ async def msg_editor(b: Bot, lock):
         msg_text += "\n"
 
     msg_text += (
-        f"📡 Дані з ДТЕКу: \n<i>{sub_type}</i> \nОновлено о: {dtek_last_update} "
+        f" Дані з ДТЕКу: \n<i>{sub_type}</i> \nОновлено о: {dtek_last_update} "
     )
 
     if start_date != "":
@@ -325,7 +328,7 @@ async def msg_editor(b: Bot, lock):
         msg_text += f"\n\n<b>Відновлення о {end_date}</b>"
 
     msg_text += (
-        "\n\n" + text_ranges + (f" \n\n🗓 Актуальність графіку: \n{last_update_str} ")
+        "\n\n" + text_ranges + (f" \n\n Актуальність графіку: \n{last_update_str} ")
     )
 
     msg_text += f"\n\n<a href='{DONATE_LINK}'>До чаю</a>"
@@ -400,3 +403,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
