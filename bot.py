@@ -17,12 +17,13 @@ from send_request import send_on_request, send_off_request
 from utils import time_format, get_next_zones, time_with_tz, zone_to_string
 from timetables import zones
 
+
 MY_ID = os.getenv("CHANNEL_ID")
 DTEK_UPDATE_INTERVAL = 90
 MSG_UPDATE_INTERVAL = 10
 REGION_NAME = "с. Лиманка"
-STREET_NAME = "вул. Затишна"
-HOUSE_NUM = "10"
+STREET_NAME = "вул. Центральна"
+HOUSE_NUM = "7/1"
 DONATE_LINK = os.getenv("DONATE_LINK")
 
 
@@ -100,20 +101,10 @@ async def send_change_msg(is_on: int):
         )
         prev_msg_text += f"\n\n<a href='{DONATE_LINK}'>До чаю</a>"
 
-    # msg = await bot.send_message(MY_ID, msg_text, disable_notification=False)
+    msg = await bot.send_message(MY_ID, msg_text, disable_notification=False)
 
-    photo = FSInputFile(path="js_render/gpv42_schedule_combined.png")
-
-    msg = await bot.send_photo(chat_id=MY_ID, caption=prev_msg_text, photo=photo)
-
-    await asyncio.sleep(2)
-
-    # await bot.edit_message_text(
-    #     text=prev_msg_text, chat_id=MY_ID, message_id=prev_msg_id
-    # )
-
-    await bot.edit_message_caption(
-        caption=prev_msg_text, chat_id=MY_ID, message_id=prev_msg_id
+    await bot.edit_message_text(
+        text=prev_msg_text, chat_id=MY_ID, message_id=prev_msg_id
     )
 
     await r.set("prev_msg_id", prev_msg_id)
@@ -147,8 +138,8 @@ async def dtek_checker(redis: Redis):
 
     url = "https://www.dtek-oem.com.ua/ua/ajax"
     REGION_NAME = "с. Лиманка"
-    STREET_NAME = "вул. Затишна"
-    HOUSE_NUM = "10"
+    STREET_NAME = "вул. Центральна"
+    HOUSE_NUM = "7/1"
     headers = {
         "Accept": "application/json, text/javascript, */*; q=0.01",
         "Accept-Encoding": "gzip, deflate, br, zstd",
@@ -416,3 +407,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
